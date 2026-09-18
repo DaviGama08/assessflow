@@ -11,3 +11,6 @@ backend/src/main/resources/static/
 .DS_Store
 
 *.tsbuildinfo
+frontend/playwright-report/
+frontend/test-results/
+frontend/blob-report/

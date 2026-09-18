@@ -1,0 +1,22 @@
+# Production checklist
+
+- [ ] CI green on the commit being released
+- [ ] Container image built from that commit SHA
+- [ ] Trivy CRITICAL policy passed
+- [ ] Flyway migrations tested on empty PostgreSQL in CI
+- [ ] `ddl-auto=validate` (never `update`)
+- [ ] `DB_URL` uses TLS (`sslmode=require`)
+- [ ] `DB_POOL_MAX` × replicas fits Neon
+- [ ] `APP_CORS_ALLOWED_ORIGINS` is the exact Pages origin (no `*`)
+- [ ] `APP_WS_ALLOWED_ORIGINS` matches the frontend
+- [ ] Refresh cookie `Secure`, `HttpOnly`, `SameSite=Strict`, path `/api/v1/auth`
+- [ ] `SameSite=None` not used unless `Secure=true` (startup rejects otherwise)
+- [ ] Lean: 1 replica, `APP_REALTIME_BROKER_MODE=simple`, `APP_REDIS_ENABLED=false`
+- [ ] Scaled: 2+ replicas, relay + Redis with non-localhost hosts and passwords
+- [ ] `APP_HTTP_PROXY_MODE=none` until Azure origin cannot be reached except via Cloudflare
+- [ ] Azure probes: liveness + readiness HTTP paths, not TCP-only
+- [ ] WebSocket `wss://api.<domain>/ws` through Cloudflare without caching
+- [ ] Prometheus not exposed on the public internet
+- [ ] Secrets live in Azure Container Apps / GitHub environment, not in git or the image
+- [ ] Known-good previous image SHA recorded for rollback
+- [ ] Smoke: HTTPS frontend, HTTPS `/actuator/health/liveness` and `readiness`, login, refresh, guest join, answer, finish

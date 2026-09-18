@@ -1,117 +1,102 @@
 # AssessFlow
 
-AssessFlow is a modern assessment platform built with Spring Boot, React and PostgreSQL. Organizations isolate tenants. Authors manage a reusable question bank and assemble assessments inside a branded workspace.
+Reusable **multi-tenant assessment platform** with two live modes:
 
-AssessFlow evolved from the academic **Distributed Quiz Platform**, which explored distributed systems, networking, replication and failover. This professional version is a separate, web-oriented codebase with its own Git history. The academic project at `isec/distributed-quiz` remains unchanged and serves as a domain reference.
+- **Cloud Live** — hosts and guests on the public internet (Cloudflare + Azure + Neon)
+- **Local Live** — the same product on a laptop LAN/hotspot **without Internet**
 
-## Current scope
+It is not a Kahoot clone. Organizations isolate tenants. Authors keep a question bank and assemble assessments. Instructors run live sessions with join codes, QR, WebSocket events and reconnect. The same codebase scales from one JVM to multiple API replicas.
 
-Phase 5 keeps the modular monolith and adds opt-in production scaling: Redis public rate limiting, RabbitMQ STOMP relay for multiple API instances, Micrometer/Prometheus, optional OpenTelemetry, structured production logs, and liveness/readiness probes. Local, test and Local Live still run one JVM with PostgreSQL and a simple STOMP broker. See [architecture](docs/architecture.md), [ADR 0005](docs/adr/0005-live-session-realtime.md), [ADR 0006](docs/adr/0006-local-live-mode.md), [ADR 0007](docs/adr/0007-production-scaling.md) and [local-live.md](docs/local-live.md).
+[Architecture](docs/architecture.md) · [Deployment](docs/deployment.md) · [Local Live](docs/local-live.md) · [WebSocket](docs/websocket.md) · [Production checklist](docs/production-checklist.md)
 
-```text
-Load balancer (cloud)
-        ↓
-AssessFlow API × N   (Spring Boot 4.1.1, Java 25)
-        ├── PostgreSQL 17     source of truth
-        ├── Redis             public rate limit (opt-in)
-        └── RabbitMQ STOMP    scaled realtime (opt-in)
+![CI](https://github.com/DaviGama08/assessflow/actions/workflows/ci.yml/badge.svg)
+
+## Live demo
+
+Configure Cloudflare Pages and Azure Container Apps as in [deployment.md](docs/deployment.md). This repository does not invent a public URL or uptime number.
+
+Screenshots: add real product captures under `docs/screenshots/` when available.
+
+## Architecture
+
+```mermaid
+flowchart TD
+  users[Users] --> cf[Cloudflare]
+  cf --> pages[Cloudflare Pages / React]
+  cf --> api[Azure Container Apps / Spring Boot]
+  api --> neon[Neon PostgreSQL]
+  api -.-> redis[Redis optional]
+  api -.-> rabbit[RabbitMQ STOMP optional]
 ```
 
-## Requirements
+**Lean (portfolio):** Pages + one API replica + Neon. Simple STOMP broker. In-memory rate limiter.
 
-- Java 25
-- Node 24 LTS (`frontend/.nvmrc`)
-- Docker with Compose v2
+**Scaled:** two or more API replicas require Redis rate limiting and RabbitMQ STOMP relay. Cross-instance realtime is covered by integration tests.
 
-## Run locally
+**Local Live (no Internet):** Spring Boot serves the SPA, PostgreSQL on localhost, simple STOMP, LAN join QR, optional Ubuntu hotspot.
 
-1. Copy `.env.example` to `.env`. Its credentials are for local development only. Keep `.env` untracked.
-2. Run `docker compose up -d postgres` from the repository root. Wait for the container healthcheck. The default host port is 55432; set `POSTGRES_PORT` and the matching port in `DB_URL` to change it.
-3. In another terminal, run `cd backend && ./mvnw spring-boot:run`. The default `local` profile uses the Compose database. Override `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, and `APP_CORS_ALLOWED_ORIGINS` when needed.
-4. In another terminal, run `cd frontend && npm ci && npm run dev`. Open <http://localhost:5173>. Set `VITE_API_BASE_URL` if the API is elsewhere; it defaults to `http://localhost:8080/api/v1`. Set `VITE_PUBLIC_APP_URL` to the URL encoded in join QR codes (default `http://localhost:5173`) and `VITE_WS_URL` for STOMP (default `ws://localhost:8080/ws`).
-5. Check <http://localhost:8080/actuator/health> for `{"status":"UP"}`.
-6. Publish an assessment, click **Start live session**, and open `/join/{code}` in another browser. Guests do not need an account.
+## Features
 
-The default database and local user are `assessflow` and `assessflow_local`. Flyway applies `V1` through `V13` on an empty database; Hibernate validates the schema at startup. `V5` deletes assessments created before organization scoping because they cannot be attributed to a tenant. `V9`–`V13` add live sessions, snapshots, participants, answers and guest token expiry.
+- Authentication, refresh cookie, organizations, RBAC (OWNER / ADMIN / INSTRUCTOR / PARTICIPANT)
+- Question bank, assessment builder, branding, DRAFT → PUBLISHED → ARCHIVED
+- Live sessions: join codes, QR, waiting room, answers, results, guest tokens, reconnect
+- Local Event Packages (typed schema, canonical SHA-256) and FINISHED-only CSV export
+- Opt-in Redis public rate limiting and RabbitMQ STOMP relay
+- Micrometer metrics, optional OTLP traces, ECS logs, liveness/readiness, graceful shutdown
 
-To try multiple API instances locally, start `docker compose -f compose.scale.yaml up -d` and run the backend with `--spring.profiles.active=production` after setting `RABBITMQ_*`, `REDIS_*` and `APP_CORS_ALLOWED_ORIGINS`. Do not use that profile for Local Live.
+## Technology
 
-## Implemented
+Java 25 · Spring Boot 4.1.1 · PostgreSQL 17 · Flyway · React 19 · TypeScript · Vite · Redis (optional) · RabbitMQ STOMP (optional) · GitHub Actions · GHCR · Azure Container Apps · Cloudflare Pages · Neon
 
-- Authentication: register, login, refresh, logout, BCrypt passwords, hashed opaque tokens
-- Organizations and memberships with OWNER, ADMIN, INSTRUCTOR and PARTICIPANT
-- Last-owner protection
-- Multi-tenancy through `organization_id` and scoped queries
-- Organization-scoped assessment CRUD and configuration
-- Reusable question bank with categories and option validation
-- Assessment builder that links bank questions with points and order
-- Organization branding (display name, logo URL, colors) without custom HTML/CSS/JS
-- Assessment lifecycle: `DRAFT → PUBLISHED → ARCHIVED` through explicit publish/archive endpoints
-- Live sessions from published assessments, with join codes, QR, waiting room and guest participants
-- WebSocket/STOMP events, REST answer submission, per-question results and reconnect from persisted state
-- Local Live Mode (`local-live`): same-origin SPA, LAN join URLs, typed event packages, FINISHED-only CSV export
-- Opt-in scale: Redis rate limiting, RabbitMQ STOMP relay, after-commit realtime, Prometheus, optional OTLP, ECS logs
+## Local development
 
-## API
+```bash
+cp .env.example .env
+docker compose up -d postgres
+cd backend && ./mvnw spring-boot:run
+cd frontend && npm ci && npm run dev
+```
 
-| Method | Path | Result |
-| --- | --- | --- |
-| POST | `/api/v1/auth/register` | Register |
-| POST | `/api/v1/auth/login` | Login |
-| POST | `/api/v1/auth/refresh` | Rotate refresh token |
-| POST | `/api/v1/auth/logout` | Logout |
-| GET | `/api/v1/auth/me` | Current user |
-| POST | `/api/v1/organizations` | Create organization |
-| GET | `/api/v1/organizations` | List memberships |
-| GET | `/api/v1/organizations/{organizationId}` | Organization detail |
-| PATCH | `/api/v1/organizations/{organizationId}` | Rename |
-| GET/POST | `/api/v1/organizations/{organizationId}/members` | List / add members |
-| PATCH | `/api/v1/organizations/{organizationId}/members/{memberId}/role` | Change role |
-| DELETE | `/api/v1/organizations/{organizationId}/members/{memberId}` | Remove member |
-| GET | `/api/v1/organizations/{organizationId}/dashboard` | Simple counts |
-| GET/PUT | `/api/v1/organizations/{organizationId}/branding` | Read / update branding |
-| POST/GET | `/api/v1/organizations/{organizationId}/assessments` | Create / list |
-| GET/PUT/DELETE | `/api/v1/organizations/{organizationId}/assessments/{assessmentId}` | Detail / update / delete |
-| POST/GET/DELETE | `/api/v1/organizations/{organizationId}/assessments/{assessmentId}/questions/{questionId}` | Link / list / unlink |
-| PUT | `/api/v1/organizations/{organizationId}/assessments/{assessmentId}/questions/order` | Reorder |
-| POST/GET | `/api/v1/organizations/{organizationId}/questions` | Create / list questions |
-| GET/PUT/DELETE | `/api/v1/organizations/{organizationId}/questions/{questionId}` | Detail / update / archive |
-| POST/GET | `/api/v1/organizations/{organizationId}/question-categories` | Create / list categories |
-| POST | `/api/v1/organizations/{organizationId}/assessments/{assessmentId}/publish` | Publish a draft |
-| POST | `/api/v1/organizations/{organizationId}/assessments/{assessmentId}/archive` | Archive |
-| POST | `/api/v1/organizations/{organizationId}/assessments/{assessmentId}/live-sessions` | Create a live session |
-| GET | `/api/v1/organizations/{organizationId}/live-sessions/{sessionId}` | Host session detail |
-| POST | `/api/v1/organizations/{organizationId}/live-sessions/{sessionId}/start` | Start (first question) |
-| POST | `/api/v1/organizations/{organizationId}/live-sessions/{sessionId}/questions/end` | Close current question |
-| POST | `/api/v1/organizations/{organizationId}/live-sessions/{sessionId}/questions/next` | Open the next question |
-| POST | `/api/v1/organizations/{organizationId}/live-sessions/{sessionId}/finish` | Finish |
-| POST | `/api/v1/organizations/{organizationId}/live-sessions/{sessionId}/cancel` | Cancel |
-| GET | `/api/v1/live-sessions/preview?code=` | Public session preview |
-| POST | `/api/v1/live-sessions/join` | Guest join |
-| GET | `/api/v1/live-sessions/{sessionId}/state` | Participant reconnect state |
-| POST | `/api/v1/live-sessions/{sessionId}/answers` | Submit an answer |
-| WS | `/ws` | STOMP, topic `/topic/sessions/{sessionId}` |
+Open http://localhost:5173. Health: http://localhost:8080/actuator/health  
+OpenAPI (local): http://localhost:8080/swagger-ui/index.html
 
-Invalid requests return 400 and missing tenant resources return 404 using ProblemDetail. Page size is capped at 100. Guest join does not require an AssessFlow account.
-
-## Quality checks
+Quality:
 
 ```bash
 cd backend && ./mvnw clean verify
-cd frontend && npm ci && npm run format:check && npm run lint && npm test && npm run build
-# From the root:
+cd frontend && npm ci && npm run format:check && npm run lint && npm test && VITE_SAME_ORIGIN=true npm run build
 docker compose config
 ```
 
-CI runs backend tests and frontend formatting, lint, tests and build checks on `main` and `dev` pushes and pull requests.
+## Local Live Mode
+
+Profile `local-live`: same-origin SPA + API + `/ws`, PostgreSQL on `127.0.0.1`, LAN join URLs. See [docs/local-live.md](docs/local-live.md). Redis and RabbitMQ stay off.
+
+## Production
+
+Images: `ghcr.io/<owner>/assessflow-backend:<git-sha>`  
+Frontend env: `VITE_API_BASE_URL`, `VITE_PUBLIC_APP_URL`, `VITE_WS_URL` (https/wss, never localhost).  
+Preferred hosts: `https://app.<domain>` and `https://api.<domain>` so the refresh cookie can stay `SameSite=Strict`.
+
+## Testing
+
+Backend: JUnit + Testcontainers (PostgreSQL, Redis, RabbitMQ), including a two-instance STOMP fan-out test.  
+Frontend: Vitest. Playwright E2E (`npm run test:e2e`) against a local API in CI.
+
+## Security
+
+Opaque hashed tokens, BCrypt, tenant-scoped queries, WebSocket origin allowlists, production fail-fast for localhost brokers, Dependabot, CodeQL, Trivy on the published image. **No license file is selected yet** — do not assume MIT/Apache rights.
 
 ## Roadmap
 
 - Phase 1 — Modern web foundation ✅
 - Phase 1.5 — AssessFlow product identity ✅
 - Phase 2 — Organizations, identity, multi-tenancy, Question Bank, Assessment Builder and branding ✅
-- Phase 3 — Live Sessions, WebSocket, join codes and QR Code ✅
-- Phase 4 — Local Live Mode, LAN join QR, assessment packages, Ubuntu hotspot helper ✅
-- Phase 5 — Redis, messaging, observability and production scaling
+- Phase 3 — Live Sessions, WebSocket, join codes and QR ✅
+- Phase 4 — Local Live Mode ✅
+- Phase 5 — Redis, RabbitMQ STOMP relay, observability and production scaling ✅
+- Phase 6 — Production deployment, CI/CD, Cloudflare, Azure, Neon and portfolio docs ✅
 
-Local Live works without Internet, but participating devices must share a local network. See [Local Live](docs/local-live.md) and [ADR 0006](docs/adr/0006-local-live-mode.md). The STOMP simple broker remains single-instance. Redis, RabbitMQ, Kafka and automatic cloud sync are not implemented.
+## Academic origin
+
+AssessFlow evolved from the academic Distributed Quiz Platform (`isec/distributed-quiz`). That project stays unchanged as a domain reference. This repository has its own history.
