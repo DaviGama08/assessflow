@@ -28,4 +28,8 @@ jobs:
       - uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
+      - name: Compile backend for CodeQL
+        if: matrix.language == 'java-kotlin'
+        run: ./mvnw -B -DskipTests compile
+        working-directory: backend
       - uses: github/codeql-action/analyze@v3
