@@ -8,15 +8,13 @@ Phase 3 turns a published assessment into a live session. Instructors host from 
 
 ## Decision
 
-**Commands stay on REST. Notifications use WebSocket/STOMP.** Creating a session, joining, starting, closing a question, moving to the next question, submitting an answer, finishing and cancelling are HTTP commands. Spring WebSocket with STOMP and an in-memory simple broker push typed events to `/topic/sessions/{sessionId}`:
-
-`PARTICIPANT_JOINED`, `PARTICIPANT_LEFT`, `SESSION_STARTED`, `QUESTION_STARTED`, `ANSWER_RECEIVED`, `QUESTION_ENDED`, `QUESTION_RESULTS`, `SESSION_FINISHED`, `SESSION_CANCELLED`.
+**Commands stay on REST. Notifications use WebSocket/STOMP.** Creating a session, joining, starting, closing a question, moving to the next question, submitting an answer, finishing and cancelling are HTTP commands. Spring WebSocket with STOMP and an in-memory simple broker push typed events. Participants subscribe to `/topic/sessions/{sessionId}` (`SESSION_STARTED`, `QUESTION_STARTED`, sanitized `QUESTION_RESULTS`, `SESSION_FINISHED`, `SESSION_CANCELLED`). Hosts subscribe to `/topic/host/sessions/{sessionId}` (`PARTICIPANT_JOINED`, `PARTICIPANT_LEFT`, `PRESENCE_CHANGED`, `ANSWER_RECEIVED`, plus the same session events). A guest cannot subscribe to the host topic. Handshake origins come from `APP_WS_ALLOWED_ORIGINS` or `APP_CORS_ALLOWED_ORIGINS`.
 
 **PostgreSQL is the source of truth.** Session status, current question, snapshots, participants, tokens and answers are persisted. A client that misses an event recovers with `GET /api/v1/live-sessions/{sessionId}/state` (participant) or the host GET endpoints. WebSocket memory is not authoritative.
 
 **Join codes** are six characters from `ABCDEFGHJKMNPQRSTUVWXYZ23456789`, stored uppercase, compared case-insensitively, and unique in `live_sessions`. Collisions retry with a new code.
 
-**Guest identity** is an opaque 32-byte hex token, stored as SHA-256. The browser keeps the raw token in `sessionStorage`. REST and STOMP CONNECT send `Authorization: Bearer <token>`. The filter binds the token to one participant and one session. The client cannot pick a `participantId`.
+**Guest identity** is an opaque 32-byte hex token, stored as SHA-256, with `token_expires_at`. Default TTL is 12 hours via `APP_LIVE_PARTICIPANT_TOKEN_TTL` so a participant can still read the final score. Expired tokens return `401 PARTICIPANT_TOKEN_EXPIRED`. The browser keeps the raw token in `sessionStorage`. REST and STOMP CONNECT send `Authorization: Bearer <token>`. The filter binds the token to one participant and one session. The client cannot pick a `participantId`. Wi-Fi drops mark `DISCONNECTED`; explicit `POST .../leave` marks `LEFT`.
 
 **Snapshots.** `LiveSessionQuestion` and `LiveSessionQuestionOption` copy text, type, order, points and correctness at create time. Participant question payloads never include `correct`. Shared STOMP `QUESTION_RESULTS` also omit `correct`; the host reads correctness from REST.
 
