@@ -1,10 +1,10 @@
-package com.davigama.distributedquiz.assessment.api;
+package com.davigama.assessflow.assessment.api;
 
-import com.davigama.distributedquiz.assessment.api.dto.AssessmentResponse;
-import com.davigama.distributedquiz.assessment.api.dto.AssessmentPageResponse;
-import com.davigama.distributedquiz.assessment.api.dto.CreateAssessmentRequest;
-import com.davigama.distributedquiz.assessment.api.dto.UpdateAssessmentRequest;
-import com.davigama.distributedquiz.assessment.application.AssessmentService;
+import com.davigama.assessflow.assessment.api.dto.AssessmentResponse;
+import com.davigama.assessflow.assessment.api.dto.AssessmentPageResponse;
+import com.davigama.assessflow.assessment.api.dto.CreateAssessmentRequest;
+import com.davigama.assessflow.assessment.api.dto.UpdateAssessmentRequest;
+import com.davigama.assessflow.assessment.application.AssessmentService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

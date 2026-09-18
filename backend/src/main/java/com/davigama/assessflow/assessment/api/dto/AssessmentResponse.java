@@ -1,7 +1,7 @@
-package com.davigama.distributedquiz.assessment.api.dto;
+package com.davigama.assessflow.assessment.api.dto;
 
-import com.davigama.distributedquiz.assessment.domain.Assessment;
-import com.davigama.distributedquiz.assessment.domain.AssessmentStatus;
+import com.davigama.assessflow.assessment.domain.Assessment;
+import com.davigama.assessflow.assessment.domain.AssessmentStatus;
 import java.time.Instant;
 import java.util.UUID;
 

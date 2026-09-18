@@ -1,4 +1,4 @@
-package com.davigama.distributedquiz.shared.config;
+package com.davigama.assessflow.shared.config;
 
 import java.util.Arrays;
 import org.springframework.beans.factory.annotation.Value;

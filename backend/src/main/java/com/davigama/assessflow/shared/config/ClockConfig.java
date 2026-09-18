@@ -1,4 +1,4 @@
-package com.davigama.distributedquiz.shared.config;
+package com.davigama.assessflow.shared.config;
 
 import java.time.Clock;
 import org.springframework.context.annotation.Bean;

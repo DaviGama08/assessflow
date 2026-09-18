@@ -1,11 +1,11 @@
-package com.davigama.distributedquiz.assessment.application;
+package com.davigama.assessflow.assessment.application;
 
-import com.davigama.distributedquiz.assessment.api.dto.AssessmentResponse;
-import com.davigama.distributedquiz.assessment.api.dto.CreateAssessmentRequest;
-import com.davigama.distributedquiz.assessment.api.dto.UpdateAssessmentRequest;
-import com.davigama.distributedquiz.assessment.domain.Assessment;
-import com.davigama.distributedquiz.assessment.infrastructure.AssessmentRepository;
-import com.davigama.distributedquiz.shared.exception.AssessmentNotFoundException;
+import com.davigama.assessflow.assessment.api.dto.AssessmentResponse;
+import com.davigama.assessflow.assessment.api.dto.CreateAssessmentRequest;
+import com.davigama.assessflow.assessment.api.dto.UpdateAssessmentRequest;
+import com.davigama.assessflow.assessment.domain.Assessment;
+import com.davigama.assessflow.assessment.infrastructure.AssessmentRepository;
+import com.davigama.assessflow.shared.exception.AssessmentNotFoundException;
 import java.time.Clock;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
