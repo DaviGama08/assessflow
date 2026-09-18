@@ -18,3 +18,5 @@ Multi-tenant assessments, question bank, live sessions, Local Live without Inter
 - Production profile defaults to lean mode (simple broker, Redis off)
 - README describes completed Phases 1–6 without claiming unimplemented brokers
 - Embedded Tomcat pinned to 11.0.26 (Spring Boot 4.1.1 still manages 11.0.24)
+- Client STOMP `SEND` rejected on the inbound channel (commands stay on REST)
+- Azure deploys the Trivy-scanned image digest; GHCR pull is anonymous for the public package
