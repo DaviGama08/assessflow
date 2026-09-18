@@ -51,6 +51,12 @@ public class LiveJoinController {
         service.answer(principal(authentication), sessionId, request);
     }
 
+    @PostMapping("/{sessionId}/leave")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void leave(@PathVariable UUID sessionId, Authentication authentication) {
+        service.leave(principal(authentication), sessionId);
+    }
+
     private ParticipantPrincipal principal(Authentication authentication) {
         if (authentication == null || !(authentication.getPrincipal() instanceof ParticipantPrincipal principal)) {
             throw new com.davigama.assessflow.shared.exception.DomainException(
