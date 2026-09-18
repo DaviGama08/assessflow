@@ -1,6 +1,5 @@
 name: Publish image
 on:
-  workflow_dispatch:
   workflow_run:
     workflows: [CI]
     types: [completed]
@@ -10,15 +9,16 @@ permissions:
   packages: write
 jobs:
   publish:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     outputs:
       digest: ${{ steps.push.outputs.digest }}
       image: ${{ steps.meta.outputs.tags }}
+      deploy: ${{ steps.refs.outputs.deploy }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.event.workflow_run.head_sha }}
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -27,7 +27,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: meta
         run: |
-          sha="${{ github.event.workflow_run.head_sha || github.sha }}"
+          sha="${{ github.event.workflow_run.head_sha }}"
           owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')
           image="ghcr.io/${owner}/assessflow-backend"
           echo "image=${image}" >> "$GITHUB_OUTPUT"
@@ -59,10 +59,16 @@ jobs:
         with:
           name: assessflow-backend-sbom
           path: sbom.cdx.json
-      - run: |
+      - id: refs
+        run: |
+          digest="${{ steps.push.outputs.digest }}"
+          image="${{ steps.meta.outputs.image }}"
+          deploy="${image}@${digest}"
+          echo "deploy=${deploy}" >> "$GITHUB_OUTPUT"
           echo "commit=${{ steps.meta.outputs.sha }}"
           echo "image=${{ steps.meta.outputs.tags }}"
-          echo "digest=${{ steps.push.outputs.digest }}"
+          echo "digest=${digest}"
+          echo "deploy=${deploy}"
   deploy:
     needs: publish
     if: vars.AZURE_CONTAINER_APP_NAME != ''
@@ -81,11 +87,8 @@ jobs:
         env:
           APP: ${{ vars.AZURE_CONTAINER_APP_NAME }}
           RG: ${{ vars.AZURE_RESOURCE_GROUP }}
-          IMAGE: ${{ needs.publish.outputs.image }}
-          DIGEST: ${{ needs.publish.outputs.digest }}
+          IMAGE: ${{ needs.publish.outputs.deploy }}
         run: |
           set -euo pipefail
-          az containerapp registry set --name "$APP" --resource-group "$RG" \
-            --server ghcr.io --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}" || true
           az containerapp update --name "$APP" --resource-group "$RG" --image "$IMAGE"
-          echo "Deployed $IMAGE digest=$DIGEST"
+          echo "Deployed $IMAGE"

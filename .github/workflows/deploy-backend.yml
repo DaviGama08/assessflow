@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: Full GHCR tag ghcr.io/<owner>/assessflow-backend:<git-sha>
+        description: ghcr.io/<owner>/assessflow-backend:<40-char-git-sha> or @sha256:<digest>
         required: true
 permissions:
   contents: read
@@ -22,12 +22,32 @@ jobs:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-      - name: Deploy known SHA image
+      - name: Deploy known image
         env:
           APP: ${{ vars.AZURE_CONTAINER_APP_NAME }}
           RG: ${{ vars.AZURE_RESOURCE_GROUP }}
           IMAGE: ${{ github.event.inputs.image_tag }}
+          OWNER: ${{ github.repository_owner }}
         run: |
           set -euo pipefail
+          owner=$(printf '%s' "$OWNER" | tr '[:upper:]' '[:lower:]')
+          prefix="ghcr.io/${owner}/assessflow-backend"
+          sha_re='^[0-9a-f]{40}$'
+          digest_re='^sha256:[0-9a-f]{64}$'
+          case "$IMAGE" in
+            "${prefix}:"*)
+              tag="${IMAGE#"${prefix}:"}"
+              [[ "$tag" =~ $sha_re ]] || { echo "Rejected mutable or non-SHA tag: $IMAGE"; exit 1; }
+              ;;
+            "${prefix}@sha256:"*)
+              digest="${IMAGE#"${prefix}@"}"
+              [[ "$digest" =~ $digest_re ]] || { echo "Rejected digest: $IMAGE"; exit 1; }
+              ;;
+            *)
+              echo "Rejected image reference: $IMAGE"
+              echo "Expected ${prefix}:<40-char-git-sha> or ${prefix}@sha256:<64-hex>"
+              exit 1
+              ;;
+          esac
           az containerapp update --name "$APP" --resource-group "$RG" --image "$IMAGE"
           az containerapp revision list --name "$APP" --resource-group "$RG" -o table

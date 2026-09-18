@@ -53,7 +53,7 @@ Do not run Redis or RabbitMQ as disposable sidecars. Lean mode leaves them disab
 
 ## GitHub → GHCR → Azure
 
-CI on `main`/`dev` verifies tests, frontend, container smoke and Playwright. After CI succeeds on `main`, `Publish image` pushes `ghcr.io/<owner>/assessflow-backend:<full-sha>` (never deploy `latest`). Trivy fails the job on applicable CRITICAL findings. CycloneDX SBOM is an artifact.
+CI on `main`/`dev` verifies tests, frontend, container smoke and Playwright. After CI succeeds on `main`, `Publish image` pushes `ghcr.io/<owner>/assessflow-backend:<full-sha>` (never deploy `latest`). There is no `workflow_dispatch` on that workflow: production images come only from a `main` commit whose CI succeeded. Trivy fails the job on applicable CRITICAL findings, then Azure (when configured) deploys the scanned digest `ghcr.io/<owner>/assessflow-backend@sha256:…`. CycloneDX SBOM is an artifact. The GHCR package is public; Azure pulls anonymously. Do not store `GITHUB_TOKEN` as a Container App registry password.
 
 Azure authentication uses GitHub OIDC (`azure/login` federated credential). Create GitHub environment `production` with:
 
@@ -67,7 +67,7 @@ Azure authentication uses GitHub OIDC (`azure/login` federated credential). Crea
 
 If `AZURE_CONTAINER_APP_NAME` is empty, image publish still runs and Azure deploy is skipped.
 
-Rollback: deploy the previous known-good SHA image (`Deploy backend` workflow_dispatch). Do not rebuild old source with new dependencies. Application rollback is not a Flyway data rollback.
+Rollback: `Deploy backend` workflow_dispatch accepts only `ghcr.io/<owner>/assessflow-backend:<40-char-git-sha>` or `@sha256:<digest>`. Do not rebuild old source with new dependencies. Application rollback is not a Flyway data rollback.
 
 ## Azure Container Apps
 
@@ -75,7 +75,7 @@ Rollback: deploy the previous known-good SHA image (`Deploy backend` workflow_di
 - Startup/liveness: `/actuator/health/liveness`
 - Readiness: `/actuator/health/readiness`
 - New revisions receive traffic only when ready
-- Registry: GHCR. Grant the app a pull identity
+- Registry: public GHCR. Anonymous pull; no registry username/password on the Container App
 - Restrict ingress to Cloudflare when `APP_HTTP_PROXY_MODE=cloudflare`. Do not hardcode Cloudflare IP lists in Java
 - Hikari `DB_POOL_MAX` × replica count must stay within the Neon pooled connection budget
 
