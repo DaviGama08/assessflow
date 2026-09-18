@@ -6,14 +6,15 @@ AssessFlow evolved from the academic **Distributed Quiz Platform**, which explor
 
 ## Current scope
 
-Phase 3 adds live sessions on top of Phase 2: published assessments, join codes, QR, a waiting room, WebSocket/STOMP, live questions, answers, results and reconnect. See [architecture](docs/architecture.md), [academic architecture](docs/legacy-architecture.md), [ADR 0001](docs/adr/0001-modular-monolith.md), [ADR 0002](docs/adr/0002-authentication-strategy.md), [ADR 0003](docs/adr/0003-multi-tenancy-strategy.md), [ADR 0004](docs/adr/0004-question-bank-reuse.md) and [ADR 0005](docs/adr/0005-live-session-realtime.md).
+Phase 5 keeps the modular monolith and adds opt-in production scaling: Redis public rate limiting, RabbitMQ STOMP relay for multiple API instances, Micrometer/Prometheus, optional OpenTelemetry, structured production logs, and liveness/readiness probes. Local, test and Local Live still run one JVM with PostgreSQL and a simple STOMP broker. See [architecture](docs/architecture.md), [ADR 0005](docs/adr/0005-live-session-realtime.md), [ADR 0006](docs/adr/0006-local-live-mode.md), [ADR 0007](docs/adr/0007-production-scaling.md) and [local-live.md](docs/local-live.md).
 
 ```text
-React + TypeScript + Vite
-          ↓ REST /api/v1
-Spring Boot 4.1.1 (Java 25)
-          ↓ JPA / Hibernate + Flyway
-PostgreSQL 17
+Load balancer (cloud)
+        ↓
+AssessFlow API × N   (Spring Boot 4.1.1, Java 25)
+        ├── PostgreSQL 17     source of truth
+        ├── Redis             public rate limit (opt-in)
+        └── RabbitMQ STOMP    scaled realtime (opt-in)
 ```
 
 ## Requirements
@@ -31,7 +32,9 @@ PostgreSQL 17
 5. Check <http://localhost:8080/actuator/health> for `{"status":"UP"}`.
 6. Publish an assessment, click **Start live session**, and open `/join/{code}` in another browser. Guests do not need an account.
 
-The default database and local user are `assessflow` and `assessflow_local`. Flyway applies `V1` through `V12` on an empty database; Hibernate validates the schema at startup. `V5` deletes assessments created before organization scoping because they cannot be attributed to a tenant. `V9`–`V12` add live sessions, question snapshots, participants and answers.
+The default database and local user are `assessflow` and `assessflow_local`. Flyway applies `V1` through `V13` on an empty database; Hibernate validates the schema at startup. `V5` deletes assessments created before organization scoping because they cannot be attributed to a tenant. `V9`–`V13` add live sessions, snapshots, participants, answers and guest token expiry.
+
+To try multiple API instances locally, start `docker compose -f compose.scale.yaml up -d` and run the backend with `--spring.profiles.active=production` after setting `RABBITMQ_*`, `REDIS_*` and `APP_CORS_ALLOWED_ORIGINS`. Do not use that profile for Local Live.
 
 ## Implemented
 
@@ -46,6 +49,8 @@ The default database and local user are `assessflow` and `assessflow_local`. Fly
 - Assessment lifecycle: `DRAFT → PUBLISHED → ARCHIVED` through explicit publish/archive endpoints
 - Live sessions from published assessments, with join codes, QR, waiting room and guest participants
 - WebSocket/STOMP events, REST answer submission, per-question results and reconnect from persisted state
+- Local Live Mode (`local-live`): same-origin SPA, LAN join URLs, typed event packages, FINISHED-only CSV export
+- Opt-in scale: Redis rate limiting, RabbitMQ STOMP relay, after-commit realtime, Prometheus, optional OTLP, ECS logs
 
 ## API
 

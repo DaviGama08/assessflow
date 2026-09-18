@@ -16,4 +16,4 @@ Linux/Ubuntu can start a NetworkManager hotspot via `scripts/local-live/hotspot.
 
 ## Consequences
 
-An event can run with no Internet if Java, the jar, PostgreSQL and (optionally) the Postgres image were prepared in advance. Automatic hotspot and captive portal are not guaranteed. The simple STOMP broker remains single-instance.
+An event can run with no Internet if Java, the jar, PostgreSQL and (optionally) the Postgres image were prepared in advance. Automatic hotspot and captive portal are not guaranteed. The simple STOMP broker remains single-instance. Phase 5 Redis/RabbitMQ/Prometheus/OTLP are not started in Local Live.
