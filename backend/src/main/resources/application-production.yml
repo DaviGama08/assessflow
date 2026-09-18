@@ -1,28 +1,38 @@
-# Scaled cloud profile: multiple API instances, Redis rate limiting, RabbitMQ STOMP relay.
-# Local Live and local/test keep broker-mode=simple and app.redis.enabled=false.
+# Lean production is the default: one API replica, simple STOMP broker, in-memory rate limiter.
+# Scaled mode: APP_REPLICAS>=2, APP_REDIS_ENABLED=true, APP_REALTIME_BROKER_MODE=relay, real hosts/passwords.
 app:
   realtime:
-    broker-mode: ${APP_REALTIME_BROKER_MODE:relay}
+    broker-mode: ${APP_REALTIME_BROKER_MODE:simple}
   redis:
-    enabled: ${APP_REDIS_ENABLED:true}
+    enabled: ${APP_REDIS_ENABLED:false}
   auth:
     secure-cookie: true
+    refresh-cookie:
+      same-site: Strict
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS}
+  ws:
+    allowed-origins: ${APP_WS_ALLOWED_ORIGINS:${APP_CORS_ALLOWED_ORIGINS}}
+  api-docs:
+    enabled: false
+  deploy:
+    replicas: ${APP_REPLICAS:1}
+  http:
+    proxy-mode: ${APP_HTTP_PROXY_MODE:none}
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus
+        include: health,info
   endpoint:
     health:
       group:
         readiness:
-          include: ping,readinessState,db,stompRelay
+          include: ${APP_READINESS_INDICATORS:ping,readinessState,db}
   prometheus:
     metrics:
       export:
-        enabled: true
+        enabled: ${MANAGEMENT_PROMETHEUS_METRICS_EXPORT_ENABLED:false}
   tracing:
     enabled: ${OTEL_TRACES_ENABLED:false}
     sampling:
@@ -34,3 +44,8 @@ logging:
   structured:
     format:
       console: ecs
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

@@ -19,7 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class PublicRateLimitFilter extends OncePerRequestFilter {
     private final PublicRequestRateLimiter limiter;
     private final AssessFlowMetrics metrics;
-    private final boolean trustedProxy;
+    private final ClientIpResolver clientIps;
     private final int joinPerMinute;
     private final int previewPerMinute;
     private final int authPerMinute;
@@ -27,13 +27,13 @@ public class PublicRateLimitFilter extends OncePerRequestFilter {
     public PublicRateLimitFilter(
             PublicRequestRateLimiter limiter,
             AssessFlowMetrics metrics,
-            @Value("${app.http.trusted-proxy:false}") boolean trustedProxy,
+            ClientIpResolver clientIps,
             @Value("${app.rate-limit.join-per-minute:30}") int joinPerMinute,
             @Value("${app.rate-limit.preview-per-minute:60}") int previewPerMinute,
             @Value("${app.rate-limit.auth-per-minute:20}") int authPerMinute) {
         this.limiter = limiter;
         this.metrics = metrics;
-        this.trustedProxy = trustedProxy;
+        this.clientIps = clientIps;
         this.joinPerMinute = joinPerMinute;
         this.previewPerMinute = previewPerMinute;
         this.authPerMinute = authPerMinute;
@@ -43,7 +43,7 @@ public class PublicRateLimitFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         Limit limit = limitFor(request);
-        if (limit != null && !limiter.allow(limit.bucket, clientKey(request), limit.perMinute, 60)) {
+        if (limit != null && !limiter.allow(limit.bucket, clientIps.clientKey(request), limit.perMinute, 60)) {
             metrics.rateLimitRejected();
             response.setStatus(429);
             response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
@@ -73,22 +73,6 @@ public class PublicRateLimitFilter extends OncePerRequestFilter {
             return new Limit("auth", authPerMinute);
         }
         return null;
-    }
-
-    /**
-     * Remote address is hashed so rate-limit keys never store raw IPs or other identifiers.
-     * X-Forwarded-For is ignored unless app.http.trusted-proxy=true, which should only be set
-     * behind a known reverse proxy (Cloudflare, Azure, nginx) that overwrites forwarded headers.
-     */
-    private String clientKey(HttpServletRequest request) {
-        String ip = request.getRemoteAddr();
-        if (trustedProxy) {
-            String forwarded = request.getHeader("X-Forwarded-For");
-            if (forwarded != null && !forwarded.isBlank()) {
-                ip = forwarded.split(",")[0].trim();
-            }
-        }
-        return ClientKeys.hash(ip);
     }
 
     private record Limit(String bucket, int perMinute) {}

@@ -1,6 +1,12 @@
 app:
   cors:
     allowed-origins: http://localhost:5173
+  auth:
+    secure-cookie: false
+    refresh-cookie:
+      same-site: Strict
+  api-docs:
+    enabled: true
   realtime:
     broker-mode: simple
   redis:

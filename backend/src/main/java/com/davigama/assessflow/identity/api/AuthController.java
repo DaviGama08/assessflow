@@ -3,6 +3,7 @@ package com.davigama.assessflow.identity.api;
 import com.davigama.assessflow.identity.application.AuthException;
 import com.davigama.assessflow.identity.application.AuthService;
 import com.davigama.assessflow.identity.domain.User;
+import com.davigama.assessflow.shared.config.RefreshCookieSettings;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -11,7 +12,6 @@ import java.util.Arrays;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -29,12 +29,12 @@ public class AuthController {
     }
     public record AuthResponse(String accessToken, UserResponse user) {}
     private final AuthService service;
-    private final boolean secureCookie;
+    private final RefreshCookieSettings cookies;
     private final String[] allowedOrigins;
-    public AuthController(AuthService service, @Value("${app.auth.secure-cookie:false}") boolean secureCookie,
+    public AuthController(AuthService service, RefreshCookieSettings cookies,
                           @Value("${app.cors.allowed-origins}") String origins) {
         this.service = service;
-        this.secureCookie = secureCookie;
+        this.cookies = cookies;
         this.allowedOrigins = Arrays.stream(origins.split(",")).map(String::trim).toArray(String[]::new);
     }
     @PostMapping("/register")
@@ -62,19 +62,15 @@ public class AuthController {
                                        HttpServletRequest request) {
         checkOrigin(request);
         service.logout(authorization != null && authorization.startsWith("Bearer ") ? authorization.substring(7) : null, refresh);
-        return ResponseEntity.noContent().header(HttpHeaders.SET_COOKIE, cookie("", 0).toString()).build();
+        return ResponseEntity.noContent().header(HttpHeaders.SET_COOKIE, cookies.cookie("", 0).toString()).build();
     }
     @GetMapping("/me")
     public UserResponse me(Authentication authentication) {
         return UserResponse.from((User) authentication.getPrincipal());
     }
     private ResponseEntity<AuthResponse> response(AuthService.Session session) {
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie(session.refreshToken(), 7 * 24 * 3600).toString())
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookies.cookie(session.refreshToken(), 7 * 24 * 3600).toString())
                 .body(new AuthResponse(session.accessToken(), UserResponse.from(session.user())));
-    }
-    private ResponseCookie cookie(String value, long age) {
-        return ResponseCookie.from("assessflow_refresh", value).httpOnly(true).secure(secureCookie)
-                .sameSite("Strict").path("/api/v1/auth").maxAge(age).build();
     }
     private void checkOrigin(HttpServletRequest request) {
         String origin = request.getHeader("Origin");
