@@ -16,6 +16,8 @@ export const assessmentsApi = {
     }),
   delete: (organizationId: string, id: string) =>
     request<void>(`${root(organizationId)}/${id}`, { method: 'DELETE' }),
+  exportPackage: (organizationId: string, id: string) =>
+    request<Record<string, unknown>>(`${root(organizationId)}/${id}/package`),
   questions: (organizationId: string, assessmentId: string) =>
     request<AssessmentQuestion[]>(`${root(organizationId)}/${assessmentId}/questions`),
   addQuestion: (

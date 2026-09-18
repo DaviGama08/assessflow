@@ -6,6 +6,8 @@ import com.davigama.assessflow.assessment.api.dto.CreateAssessmentRequest;
 import com.davigama.assessflow.assessment.api.dto.UpdateAssessmentRequest;
 import com.davigama.assessflow.assessment.application.AssessmentService;
 import com.davigama.assessflow.identity.domain.User;
+import com.davigama.assessflow.locallive.application.AssessmentPackageService;
+import java.util.Map;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -30,9 +32,11 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RequestMapping("/api/v1/organizations/{organizationId}/assessments")
 public class AssessmentController {
     private final AssessmentService service;
+    private final AssessmentPackageService packages;
 
-    public AssessmentController(AssessmentService service) {
+    public AssessmentController(AssessmentService service, AssessmentPackageService packages) {
         this.service = service;
+        this.packages = packages;
     }
 
     @PostMapping
@@ -78,6 +82,12 @@ public class AssessmentController {
     public AssessmentResponse archive(@PathVariable UUID organizationId, @PathVariable UUID assessmentId,
                                       Authentication authentication) {
         return service.archive(current(authentication), organizationId, assessmentId);
+    }
+
+    @GetMapping("/{assessmentId}/package")
+    public Map<String, Object> exportPackage(@PathVariable UUID organizationId, @PathVariable UUID assessmentId,
+                                             Authentication authentication) {
+        return packages.exportPackage(current(authentication), organizationId, assessmentId);
     }
 
     @DeleteMapping("/{assessmentId}")

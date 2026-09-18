@@ -11,6 +11,8 @@ public interface QuestionCategoryRepository extends JpaRepository<QuestionCatego
 
     List<QuestionCategory> findByOrganizationIdOrderByNameAsc(UUID organizationId);
 
+    Optional<QuestionCategory> findByOrganizationIdAndSlug(UUID organizationId, String slug);
+
     boolean existsByOrganizationIdAndSlug(UUID organizationId, String slug);
 
     boolean existsByOrganizationIdAndSlugAndIdNot(UUID organizationId, String slug, UUID id);

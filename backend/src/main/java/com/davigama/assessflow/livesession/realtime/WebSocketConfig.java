@@ -30,15 +30,18 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final LiveSessionRepository sessions;
     private final OrganizationAccess access;
     private final String[] allowedOrigins;
+    private final boolean allowPrivateLan;
 
     public WebSocketConfig(AuthService auth, ParticipantAuthService participants, LiveSessionRepository sessions,
                            OrganizationAccess access,
                            @Value("${app.ws.allowed-origins:}") String wsOrigins,
-                           @Value("${app.cors.allowed-origins}") String corsOrigins) {
+                           @Value("${app.cors.allowed-origins}") String corsOrigins,
+                           @Value("${app.ws.allow-private-lan:false}") boolean allowPrivateLan) {
         this.auth = auth;
         this.participants = participants;
         this.sessions = sessions;
         this.access = access;
+        this.allowPrivateLan = allowPrivateLan;
         String raw = wsOrigins == null || wsOrigins.isBlank() ? corsOrigins : wsOrigins;
         this.allowedOrigins = java.util.Arrays.stream(raw.split(",")).map(String::trim).filter(s -> !s.isBlank())
                 .toArray(String[]::new);
@@ -46,7 +49,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws").setAllowedOrigins(allowedOrigins);
+        var endpoint = registry.addEndpoint("/ws");
+        if (allowPrivateLan) {
+            endpoint.setAllowedOriginPatterns("http://localhost:*", "http://127.0.0.1:*", "http://10.*:*",
+                    "http://192.168.*:*", "http://172.16.*:*", "http://172.17.*:*", "http://172.18.*:*",
+                    "http://172.19.*:*", "http://172.2*.*:*", "http://172.30.*:*", "http://172.31.*:*");
+        } else {
+            endpoint.setAllowedOrigins(allowedOrigins);
+        }
     }
 
     @Override

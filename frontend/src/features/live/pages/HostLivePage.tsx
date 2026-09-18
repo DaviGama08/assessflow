@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { API_BASE_URL } from '../../../config/env'
 import { getAccessToken } from '../../auth/api/auth'
 import { QrCode } from '../components/QrCode'
 import { joinUrl } from '../joinUrl'
+import { localLiveApi, type LocalLiveStatus } from '../api/localLive'
 import {
   liveApi,
   type LiveParticipant,
@@ -22,6 +24,7 @@ export function HostLivePage() {
   const [answered, setAnswered] = useState(0)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [local, setLocal] = useState<LocalLiveStatus | null>(null)
   const token = getAccessToken()
 
   const reload = useCallback(async () => {
@@ -76,6 +79,7 @@ export function HostLivePage() {
     reload().catch((cause) =>
       setError(cause instanceof Error ? cause.message : 'Could not load session.'),
     )
+    void localLiveApi.status().then(setLocal)
   }, [reload])
 
   async function run(action: () => Promise<unknown>) {
@@ -92,15 +96,18 @@ export function HostLivePage() {
   }
 
   if (!session) return <p>{error || 'Loading session…'}</p>
-  const url = joinUrl(session.joinCode)
+  const url = local
+    ? `http://${local.selectedHost}:${local.port}/join/${session.joinCode}`
+    : joinUrl(session.joinCode)
 
   return (
     <>
       <div className="workspaceHeading">
         <div>
-          <p className="eyebrow">LIVE SESSION</p>
+          <p className="eyebrow">{local ? 'LOCAL LIVE MODE' : 'LIVE SESSION'}</p>
           <h1>{session.assessmentTitle}</h1>
           <p>
+            {local ? 'Network: Local · Internet: Not required · ' : ''}
             Status: {session.status} · {connection}
           </p>
         </div>
@@ -117,6 +124,26 @@ export function HostLivePage() {
           <QrCode value={url} />
         </div>
         <p>{people.length} participants</p>
+        {(session.status === 'FINISHED' || session.status === 'CANCELLED') && (
+          <button
+            className="buttonSecondary"
+            onClick={() => {
+              void fetch(
+                `${API_BASE_URL}/organizations/${organizationId}/live-sessions/${sessionId}/export`,
+                { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+              )
+                .then((response) => response.blob())
+                .then((blob) => {
+                  const link = document.createElement('a')
+                  link.href = URL.createObjectURL(blob)
+                  link.download = `live-session-${sessionId}.csv`
+                  link.click()
+                })
+            }}
+          >
+            Export results
+          </button>
+        )}
         {session.status === 'WAITING' && (
           <button
             disabled={busy}

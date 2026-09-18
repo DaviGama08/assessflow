@@ -1,0 +1,22 @@
+server:
+  address: ${LOCAL_LIVE_BIND:0.0.0.0}
+  port: ${LOCAL_LIVE_PORT:8080}
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://127.0.0.1:55432/assessflow}
+    username: ${DB_USERNAME:assessflow_local}
+    password: ${DB_PASSWORD:local_only_change_me}
+app:
+  auth:
+    secure-cookie: false
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:8080}
+  ws:
+    allow-private-lan: true
+  local-live:
+    enabled: true
+    host: ${LOCAL_LIVE_HOST:}
+    hotspot-script: ${LOCAL_LIVE_HOTSPOT_SCRIPT:../scripts/local-live/hotspot.sh}
+logging:
+  level:
+    com.davigama.assessflow.locallive: INFO

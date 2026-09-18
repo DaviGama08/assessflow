@@ -8,6 +8,8 @@ import com.davigama.assessflow.livesession.api.dto.LiveDtos.SessionResponse;
 import com.davigama.assessflow.livesession.application.LiveSessionService;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -77,6 +79,16 @@ public class LiveSessionHostController {
     public SessionResponse finish(@PathVariable UUID organizationId, @PathVariable UUID sessionId,
                                   Authentication authentication) {
         return service.finish(user(authentication), organizationId, sessionId);
+    }
+
+    @GetMapping("/live-sessions/{sessionId}/export")
+    public ResponseEntity<String> export(@PathVariable UUID organizationId, @PathVariable UUID sessionId,
+                                         Authentication authentication) {
+        String csv = service.exportResultsCsv(user(authentication), organizationId, sessionId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"live-session-" + sessionId + ".csv\"")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .body(csv);
     }
 
     @PostMapping("/live-sessions/{sessionId}/cancel")

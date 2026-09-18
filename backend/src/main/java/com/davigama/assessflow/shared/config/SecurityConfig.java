@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -30,8 +31,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh",
                                 "/api/v1/auth/logout",
                                 "/api/v1/live-sessions/join", "/api/v1/live-sessions/preview",
+                                "/api/v1/local-live/status", "/api/v1/local-live/join-url/**",
                                 "/ws/**",
+                                "/generate_204", "/gen_204", "/hotspot-detect.html", "/connecttest.txt",
+                                "/ncsi.txt", "/success.txt", "/library/test/success.html", "/canonical.html",
                                 "/actuator/health", "/error").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/**", "/join", "/join/**",
+                                "/play/**", "/login", "/register", "/app", "/app/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint((request, response, exception) ->
                         unauthorized(response)))

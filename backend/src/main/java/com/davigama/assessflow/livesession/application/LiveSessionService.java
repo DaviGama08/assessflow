@@ -248,6 +248,27 @@ public class LiveSessionService {
                 Map.of("answered", answered, "participants", total)));
     }
 
+    @Transactional(readOnly = true)
+    public String exportResultsCsv(User actor, UUID organizationId, UUID sessionId) {
+        LiveSession session = host(actor, organizationId, sessionId);
+        String title = assessments.requireOwned(organizationId, session.getAssessmentId()).getTitle();
+        StringBuilder csv = new StringBuilder("session,assessment,participant,status,pointsEarned,pointsPossible,percentage\n");
+        for (LiveParticipant participant : participants.findByLiveSessionIdOrderByJoinedAtAsc(sessionId)) {
+            Score score = score(session, participant.getId());
+            csv.append(session.getId()).append(',').append(csvEscape(title)).append(',')
+                    .append(csvEscape(participant.getDisplayName())).append(',')
+                    .append(participant.getStatus()).append(',')
+                    .append(score.pointsEarned()).append(',').append(score.pointsPossible()).append(',')
+                    .append(score.percentage()).append('\n');
+        }
+        return csv.toString();
+    }
+
+    private String csvEscape(String value) {
+        String text = value == null ? "" : value.replace("\"", "\"\"");
+        return '"' + text + '"';
+    }
+
     @Transactional
     public void leave(ParticipantPrincipal principal, UUID sessionId) {
         if (!principal.sessionId().equals(sessionId)) {
