@@ -68,6 +68,18 @@ public class AssessmentController {
         return service.update(current(authentication), organizationId, assessmentId, request);
     }
 
+    @PostMapping("/{assessmentId}/publish")
+    public AssessmentResponse publish(@PathVariable UUID organizationId, @PathVariable UUID assessmentId,
+                                      Authentication authentication) {
+        return service.publish(current(authentication), organizationId, assessmentId);
+    }
+
+    @PostMapping("/{assessmentId}/archive")
+    public AssessmentResponse archive(@PathVariable UUID organizationId, @PathVariable UUID assessmentId,
+                                      Authentication authentication) {
+        return service.archive(current(authentication), organizationId, assessmentId);
+    }
+
     @DeleteMapping("/{assessmentId}")
     public ResponseEntity<Void> delete(@PathVariable UUID organizationId, @PathVariable UUID assessmentId,
                                        Authentication authentication) {

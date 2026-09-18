@@ -55,6 +55,32 @@ export function AssessmentBuilderPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reload is recreated each render
   }, [organizationId, assessmentId])
 
+  async function publish() {
+    setBusy(true)
+    setError('')
+    try {
+      await assessmentsApi.publish(organizationId, assessmentId)
+      await reload()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not publish assessment.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function archive() {
+    setBusy(true)
+    setError('')
+    try {
+      await assessmentsApi.archive(organizationId, assessmentId)
+      await reload()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not archive assessment.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function save(event: FormEvent) {
     event.preventDefault()
     setBusy(true)
@@ -139,7 +165,22 @@ export function AssessmentBuilderPage({
         <div>
           <p className="eyebrow">ASSESSMENT BUILDER</p>
           <h1>{assessment?.title ?? 'Assessment'}</h1>
-          <p>General details, question selection and delivery settings.</p>
+          <p>
+            Status: {assessment?.status ?? 'DRAFT'}. General details, question selection and
+            delivery settings.
+          </p>
+        </div>
+        <div className="inlineActions">
+          {assessment?.status === 'DRAFT' && (
+            <button disabled={busy} onClick={() => void publish()}>
+              Publish
+            </button>
+          )}
+          {assessment && assessment.status !== 'ARCHIVED' && (
+            <button className="buttonSecondary" disabled={busy} onClick={() => void archive()}>
+              Archive
+            </button>
+          )}
         </div>
       </div>
       {error && (

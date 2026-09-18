@@ -48,6 +48,7 @@ public class AssessmentQuestionService {
         assessments.requireOrganization(organizationId);
         access.requireInstructor(organizationId, actor.getId());
         Assessment assessment = assessments.requireOwned(organizationId, assessmentId);
+        assessment.requireNotArchived();
         Question question = questions.requireOwned(organizationId, questionId);
         if (!question.getOrganizationId().equals(assessment.getOrganizationId())) {
             throw new DomainException(HttpStatus.NOT_FOUND, "QUESTION_NOT_FOUND",

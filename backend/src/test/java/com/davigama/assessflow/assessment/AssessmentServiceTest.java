@@ -12,10 +12,12 @@ import com.davigama.assessflow.assessment.api.dto.UpdateAssessmentRequest;
 import com.davigama.assessflow.assessment.application.AssessmentService;
 import com.davigama.assessflow.assessment.domain.Assessment;
 import com.davigama.assessflow.assessment.domain.AssessmentStatus;
+import com.davigama.assessflow.assessment.infrastructure.AssessmentQuestionRepository;
 import com.davigama.assessflow.assessment.infrastructure.AssessmentRepository;
 import com.davigama.assessflow.identity.domain.User;
 import com.davigama.assessflow.organization.application.OrganizationAccess;
 import com.davigama.assessflow.organization.infrastructure.OrganizationRepository;
+import com.davigama.assessflow.questionbank.infrastructure.QuestionRepository;
 import com.davigama.assessflow.shared.exception.AssessmentNotFoundException;
 import com.davigama.assessflow.shared.exception.DomainException;
 import java.time.Clock;
@@ -30,6 +32,8 @@ import org.mockito.MockitoAnnotations;
 
 class AssessmentServiceTest {
     @Mock AssessmentRepository repository;
+    @Mock AssessmentQuestionRepository links;
+    @Mock QuestionRepository questions;
     @Mock OrganizationRepository organizations;
     @Mock OrganizationAccess access;
     private AssessmentService service;
@@ -40,7 +44,8 @@ class AssessmentServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new AssessmentService(repository, organizations, access, Clock.fixed(now, ZoneOffset.UTC));
+        service = new AssessmentService(repository, links, questions, organizations, access,
+                Clock.fixed(now, ZoneOffset.UTC));
         actor = new User("owner@example.com", "hash", "Owner", now);
         organizationId = UUID.randomUUID();
         when(organizations.existsById(organizationId)).thenReturn(true);

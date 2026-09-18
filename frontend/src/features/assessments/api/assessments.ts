@@ -48,4 +48,8 @@ export const assessmentsApi = {
       method: 'PUT',
       body: JSON.stringify({ questionIds }),
     }),
+  publish: (organizationId: string, id: string) =>
+    request<Assessment>(`${root(organizationId)}/${id}/publish`, { method: 'POST' }),
+  archive: (organizationId: string, id: string) =>
+    request<Assessment>(`${root(organizationId)}/${id}/archive`, { method: 'POST' }),
 }

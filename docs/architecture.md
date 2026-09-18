@@ -8,7 +8,9 @@ Users register with a unique email and a BCrypt password hash. Opaque access and
 
 ## Organizations and roles
 
-An organization is the tenant. Membership binds a user to an organization with role OWNER, ADMIN, INSTRUCTOR or PARTICIPANT. The last active OWNER cannot be removed or demoted. Member management is limited to OWNER and ADMIN.
+An organization is the tenant. Membership binds a user to an organization with role OWNER, ADMIN, INSTRUCTOR or PARTICIPANT. The last active OWNER cannot be removed or demoted. Member management is limited to OWNER and ADMIN. Any active member may view the paginated member list; INSTRUCTOR and PARTICIPANT do not see add, role or remove controls. Direct `/settings` URLs are blocked in the SPA for non-managers, and the API still rejects unauthorized edits.
+
+Assessments start as DRAFT. OWNER, ADMIN and INSTRUCTOR publish through `POST .../publish` only when at least one ACTIVE question is linked. Publish and archive are domain transitions (`DRAFT → PUBLISHED`, `DRAFT|PUBLISHED → ARCHIVED`); status cannot be set by a generic DTO.
 
 ## Tenant boundaries
 
