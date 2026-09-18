@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { navigate } from '../../../shared/navigation'
+import { useNavigate } from 'react-router-dom'
 import { questionsApi } from '../api/questions'
 import { QuestionEditor } from '../components/QuestionEditor'
 import type { QuestionCategory, QuestionInput } from '../types'
@@ -11,6 +11,7 @@ export function QuestionEditorPage({
   organizationId: string
   questionId?: string
 }) {
+  const navigate = useNavigate()
   const [categories, setCategories] = useState<QuestionCategory[]>([])
   const [initial, setInitial] = useState<QuestionInput | undefined>()
   const [error, setError] = useState('')

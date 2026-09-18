@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { OrganizationSelectorPage } from './OrganizationPages'
 
@@ -20,7 +21,11 @@ describe('OrganizationSelectorPage', () => {
         },
       ],
     } as Response)
-    render(<OrganizationSelectorPage />)
+    render(
+      <MemoryRouter>
+        <OrganizationSelectorPage />
+      </MemoryRouter>,
+    )
     expect(await screen.findByRole('link', { name: /Solidus Training/ })).toHaveAttribute(
       'href',
       '/app/organizations/org-1',

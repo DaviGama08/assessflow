@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { Navigate, Outlet, Route, Routes, useNavigate, useParams } from 'react-router-dom'
+import { GuestOnly, RequireAuth, RequireOrganizationRole } from './guards'
+import { useAuth } from '../features/auth/AuthContext'
+import { LoginPage, RegisterPage } from '../features/auth/pages/AuthPages'
 import { AssessmentsPage } from '../features/assessments/pages/AssessmentsPage'
 import { AssessmentBuilderPage } from '../features/assessments/pages/AssessmentBuilderPage'
-import { authApi, type User } from '../features/auth/api/auth'
-import { LoginPage, RegisterPage } from '../features/auth/pages/AuthPages'
 import {
   MembersPage,
   OrganizationSelectorPage,
@@ -10,90 +11,145 @@ import {
 import { QuestionBankPage } from '../features/questions/pages/QuestionBankPage'
 import { QuestionEditorPage } from '../features/questions/pages/QuestionEditorPage'
 import { DashboardPage } from '../features/workspace/DashboardPage'
+import { OrganizationProvider } from '../features/workspace/OrganizationContext'
 import { SettingsPage } from '../features/workspace/SettingsPage'
 import { WorkspaceLayout } from '../features/workspace/WorkspaceLayout'
 
-export function App() {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [path, setPath] = useState(window.location.pathname)
-  useEffect(() => {
-    authApi
-      .refresh()
-      .then((session) => {
-        setUser(session.user)
-        if (['/', '/login', '/register'].includes(window.location.pathname)) {
-          window.history.replaceState({}, '', '/app')
-          setPath('/app')
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
-  useEffect(() => {
-    const updatePath = () => setPath(window.location.pathname)
-    window.addEventListener('popstate', updatePath)
-    return () => window.removeEventListener('popstate', updatePath)
-  }, [])
-  function authenticated(nextUser: User) {
-    setUser(nextUser)
-    window.history.replaceState({}, '', '/app')
-    setPath('/app')
-  }
-  function signOut() {
-    void authApi.logout().finally(() => {
-      setUser(null)
-      window.history.replaceState({}, '', '/login')
-      setPath('/login')
-    })
-  }
-  if (loading) return <main className="authPage">Loading…</main>
-  if (!user)
-    return path === '/register' ? (
-      <RegisterPage onAuthenticated={authenticated} />
-    ) : (
-      <LoginPage onAuthenticated={authenticated} />
-    )
+const contentRoles = ['OWNER', 'ADMIN', 'INSTRUCTOR'] as const
+const managerRoles = ['OWNER', 'ADMIN'] as const
 
-  const workspace = path.match(
-    /^\/app\/organizations\/([^/]+)(?:\/(assessments|questions|members|settings)(?:\/([^/]+))?)?\/?$/,
-  )
-  if (workspace) {
-    const organizationId = workspace[1]
-    const section = workspace[2]
-    const resourceId = workspace[3]
-    let content
-    if (section === 'assessments' && resourceId) {
-      content = <AssessmentBuilderPage organizationId={organizationId} assessmentId={resourceId} />
-    } else if (section === 'assessments') {
-      content = <AssessmentsPage organizationId={organizationId} />
-    } else if (section === 'questions' && resourceId === 'new') {
-      content = <QuestionEditorPage organizationId={organizationId} />
-    } else if (section === 'questions' && resourceId) {
-      content = <QuestionEditorPage organizationId={organizationId} questionId={resourceId} />
-    } else if (section === 'questions') {
-      content = <QuestionBankPage organizationId={organizationId} />
-    } else if (section === 'members') {
-      content = <MembersPage id={organizationId} user={user} />
-    } else if (section === 'settings') {
-      content = <SettingsPage organizationId={organizationId} />
-    } else {
-      content = <DashboardPage organizationId={organizationId} />
-    }
-    return (
-      <WorkspaceLayout organizationId={organizationId} user={user} path={path} onSignOut={signOut}>
-        {content}
-      </WorkspaceLayout>
-    )
-  }
-
+function AuthenticatedShell() {
+  const { user, signOut } = useAuth()
+  const navigate = useNavigate()
   return (
     <>
       <header className="sessionBar">
-        <span>{user.displayName}</span>
-        <button onClick={signOut}>Sign out</button>
+        <span>{user?.displayName}</span>
+        <button
+          onClick={() => {
+            void signOut().then(() => navigate('/login'))
+          }}
+        >
+          Sign out
+        </button>
       </header>
-      <OrganizationSelectorPage />
+      <Outlet />
     </>
+  )
+}
+
+function WorkspaceRoutes() {
+  const { user, signOut } = useAuth()
+  const navigate = useNavigate()
+  if (!user) return <Navigate to="/login" replace />
+  return (
+    <OrganizationProvider>
+      <WorkspaceLayout
+        user={user}
+        onSignOut={() => {
+          void signOut().then(() => navigate('/login'))
+        }}
+      />
+    </OrganizationProvider>
+  )
+}
+
+function ParamAssessmentsPage() {
+  const { organizationId = '' } = useParams()
+  return (
+    <RequireOrganizationRole roles={[...contentRoles]}>
+      <AssessmentsPage organizationId={organizationId} />
+    </RequireOrganizationRole>
+  )
+}
+
+function ParamAssessmentBuilderPage() {
+  const { organizationId = '', assessmentId = '' } = useParams()
+  return (
+    <RequireOrganizationRole roles={[...contentRoles]}>
+      <AssessmentBuilderPage organizationId={organizationId} assessmentId={assessmentId} />
+    </RequireOrganizationRole>
+  )
+}
+
+function ParamQuestionBankPage() {
+  const { organizationId = '' } = useParams()
+  return (
+    <RequireOrganizationRole roles={[...contentRoles]}>
+      <QuestionBankPage organizationId={organizationId} />
+    </RequireOrganizationRole>
+  )
+}
+
+function ParamQuestionEditorPage() {
+  const { organizationId = '', questionId } = useParams()
+  return (
+    <RequireOrganizationRole roles={[...contentRoles]}>
+      <QuestionEditorPage
+        organizationId={organizationId}
+        questionId={questionId === 'new' ? undefined : questionId}
+      />
+    </RequireOrganizationRole>
+  )
+}
+
+function ParamMembersPage() {
+  const { organizationId = '' } = useParams()
+  const { user } = useAuth()
+  if (!user) return <Navigate to="/login" replace />
+  return <MembersPage id={organizationId} user={user} />
+}
+
+function ParamSettingsPage() {
+  const { organizationId = '' } = useParams()
+  return (
+    <RequireOrganizationRole roles={[...managerRoles]}>
+      <SettingsPage organizationId={organizationId} />
+    </RequireOrganizationRole>
+  )
+}
+
+export function App() {
+  const { signIn } = useAuth()
+  const navigate = useNavigate()
+  function authenticated(user: Parameters<typeof signIn>[0]) {
+    signIn(user)
+    void navigate('/app', { replace: true })
+  }
+  return (
+    <Routes>
+      <Route
+        path="/login"
+        element={
+          <GuestOnly>
+            <LoginPage onAuthenticated={authenticated} />
+          </GuestOnly>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <GuestOnly>
+            <RegisterPage onAuthenticated={authenticated} />
+          </GuestOnly>
+        }
+      />
+      <Route element={<RequireAuth />}>
+        <Route element={<AuthenticatedShell />}>
+          <Route path="/app" element={<OrganizationSelectorPage />} />
+        </Route>
+        <Route path="/app/organizations/:organizationId" element={<WorkspaceRoutes />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="assessments" element={<ParamAssessmentsPage />} />
+          <Route path="assessments/:assessmentId" element={<ParamAssessmentBuilderPage />} />
+          <Route path="questions" element={<ParamQuestionBankPage />} />
+          <Route path="questions/:questionId" element={<ParamQuestionEditorPage />} />
+          <Route path="members" element={<ParamMembersPage />} />
+          <Route path="settings" element={<ParamSettingsPage />} />
+        </Route>
+      </Route>
+      <Route path="/" element={<Navigate to="/app" replace />} />
+      <Route path="*" element={<Navigate to="/app" replace />} />
+    </Routes>
   )
 }

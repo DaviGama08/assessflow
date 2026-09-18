@@ -1,9 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { navigate } from '../../../shared/navigation'
+import { useNavigate } from 'react-router-dom'
 import { questionsApi } from '../api/questions'
 import type { Question, QuestionCategory, QuestionPage } from '../types'
 
 export function QuestionBankPage({ organizationId }: { organizationId: string }) {
+  const navigate = useNavigate()
   const [data, setData] = useState<QuestionPage | null>(null)
   const [categories, setCategories] = useState<QuestionCategory[]>([])
   const [search, setSearch] = useState('')
