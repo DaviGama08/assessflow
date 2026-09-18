@@ -4,6 +4,8 @@ import com.davigama.assessflow.identity.domain.User;
 import com.davigama.assessflow.organization.application.OrganizationService;
 import com.davigama.assessflow.organization.domain.*;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -11,12 +13,15 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
+@Validated
 @RequestMapping("/api/v1/organizations")
 public class OrganizationController {
     public record CreateOrganizationRequest(@NotBlank @Size(max = 200) String name,
@@ -45,6 +50,13 @@ public class OrganizationController {
                     user.getEmail(), user.getDisplayName(), member.getRole(), member.getStatus(), member.getJoinedAt());
         }
     }
+    public record MemberPageResponse(List<MemberResponse> content, int number, int totalPages,
+                                     long totalElements, boolean first, boolean last) {
+        static MemberPageResponse from(Page<OrganizationMember> page) {
+            return new MemberPageResponse(page.getContent().stream().map(MemberResponse::from).toList(),
+                    page.getNumber(), page.getTotalPages(), page.getTotalElements(), page.isFirst(), page.isLast());
+        }
+    }
     private final OrganizationService service;
     public OrganizationController(OrganizationService service) { this.service = service; }
     @PostMapping
@@ -70,8 +82,11 @@ public class OrganizationController {
         return OrganizationResponse.from(service.rename(current(authentication), organizationId, request.name()));
     }
     @GetMapping("/{organizationId}/members")
-    public List<MemberResponse> listMembers(@PathVariable UUID organizationId, Authentication authentication) {
-        return service.listMembers(current(authentication), organizationId).stream().map(MemberResponse::from).toList();
+    public MemberPageResponse listMembers(@PathVariable UUID organizationId,
+                                          @RequestParam(defaultValue = "0") @Min(0) int page,
+                                          @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+                                          Authentication authentication) {
+        return MemberPageResponse.from(service.listMembers(current(authentication), organizationId, page, size));
     }
     @PostMapping("/{organizationId}/members")
     public ResponseEntity<MemberResponse> addMember(@PathVariable UUID organizationId,

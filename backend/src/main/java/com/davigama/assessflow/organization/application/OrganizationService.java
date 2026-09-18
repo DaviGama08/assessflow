@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,10 +64,11 @@ public class OrganizationService {
         return new OrganizationView(organization, member.getRole());
     }
     @Transactional(readOnly = true)
-    public List<OrganizationMember> listMembers(User actor, UUID organizationId) {
+    public Page<OrganizationMember> listMembers(User actor, UUID organizationId, int page, int size) {
         find(organizationId);
         access.requireMember(organizationId, actor.getId());
-        return members.findByOrganizationIdAndStatusOrderByJoinedAtAsc(organizationId, MemberStatus.ACTIVE);
+        return members.findByOrganizationIdAndStatus(organizationId, MemberStatus.ACTIVE,
+                PageRequest.of(page, size, Sort.by("joinedAt").ascending().and(Sort.by("id").ascending())));
     }
     @Transactional
     public OrganizationMember addMember(User actor, UUID organizationId, String email, MemberRole role) {

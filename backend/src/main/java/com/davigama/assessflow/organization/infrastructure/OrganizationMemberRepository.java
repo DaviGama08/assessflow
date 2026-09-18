@@ -4,6 +4,8 @@ import com.davigama.assessflow.organization.domain.*;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
 
@@ -16,6 +18,8 @@ public interface OrganizationMemberRepository extends JpaRepository<Organization
     List<OrganizationMember> findByUserIdAndStatus(UUID userId, MemberStatus status);
     @EntityGraph(attributePaths = {"user", "organization"})
     List<OrganizationMember> findByOrganizationIdAndStatusOrderByJoinedAtAsc(UUID organizationId, MemberStatus status);
+    @EntityGraph(attributePaths = {"user", "organization"})
+    Page<OrganizationMember> findByOrganizationIdAndStatus(UUID organizationId, MemberStatus status, Pageable pageable);
     long countByOrganizationIdAndRoleAndStatus(UUID organizationId, MemberRole role, MemberStatus status);
     long countByOrganizationIdAndStatus(UUID organizationId, MemberStatus status);
 }
