@@ -6,8 +6,8 @@ import com.davigama.assessflow.assessment.api.dto.CreateAssessmentRequest;
 import com.davigama.assessflow.assessment.api.dto.UpdateAssessmentRequest;
 import com.davigama.assessflow.assessment.application.AssessmentService;
 import com.davigama.assessflow.identity.domain.User;
+import com.davigama.assessflow.locallive.api.dto.AssessmentPackageV1;
 import com.davigama.assessflow.locallive.application.AssessmentPackageService;
-import java.util.Map;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -85,7 +85,7 @@ public class AssessmentController {
     }
 
     @GetMapping("/{assessmentId}/package")
-    public Map<String, Object> exportPackage(@PathVariable UUID organizationId, @PathVariable UUID assessmentId,
+    public AssessmentPackageV1 exportPackage(@PathVariable UUID organizationId, @PathVariable UUID assessmentId,
                                              Authentication authentication) {
         return packages.exportPackage(current(authentication), organizationId, assessmentId);
     }

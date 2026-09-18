@@ -14,6 +14,10 @@ app:
     secure-cookie: true
   live:
     participant-token-ttl: ${APP_LIVE_PARTICIPANT_TOKEN_TTL:12h}
+  local-package:
+    max-questions: ${APP_LOCAL_PACKAGE_MAX_QUESTIONS:200}
+    max-options-per-question: ${APP_LOCAL_PACKAGE_MAX_OPTIONS:20}
+    max-payload-bytes: ${APP_LOCAL_PACKAGE_MAX_BYTES:2097152}
 management:
   endpoints:
     web:

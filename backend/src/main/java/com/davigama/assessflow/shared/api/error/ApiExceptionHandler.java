@@ -36,6 +36,10 @@ public class ApiExceptionHandler {
     @ExceptionHandler({MethodArgumentNotValidException.class, ConstraintViolationException.class,
             HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
     ResponseEntity<ProblemDetail> invalid(Exception exception, HttpServletRequest request) {
+        if (isLocalPackageImport(request)) {
+            return problem(HttpStatus.BAD_REQUEST, "Invalid request", "The local event package is invalid.",
+                    "INVALID_LOCAL_PACKAGE", request);
+        }
         return problem(HttpStatus.BAD_REQUEST, "Invalid request", "Check the request fields and try again.",
                 "INVALID_REQUEST", request);
     }
@@ -44,6 +48,11 @@ public class ApiExceptionHandler {
     ResponseEntity<ProblemDetail> conflict(OptimisticLockingFailureException exception, HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, "Conflict", "The live session changed. Retry the command.",
                 "LIVE_SESSION_CONFLICT", request);
+    }
+
+    private boolean isLocalPackageImport(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        return uri != null && uri.endsWith("/local-live/packages");
     }
 
     private ResponseEntity<ProblemDetail> problem(HttpStatus status, String title, String detail,
