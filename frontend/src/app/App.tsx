@@ -13,6 +13,9 @@ import { QuestionEditorPage } from '../features/questions/pages/QuestionEditorPa
 import { DashboardPage } from '../features/workspace/DashboardPage'
 import { OrganizationProvider } from '../features/workspace/OrganizationContext'
 import { SettingsPage } from '../features/workspace/SettingsPage'
+import { HostLivePage } from '../features/live/pages/HostLivePage'
+import { JoinCodePage, JoinPage } from '../features/live/pages/JoinPages'
+import { ParticipantPlayPage } from '../features/live/pages/ParticipantPlayPage'
 import { WorkspaceLayout } from '../features/workspace/WorkspaceLayout'
 
 const contentRoles = ['OWNER', 'ADMIN', 'INSTRUCTOR'] as const
@@ -109,6 +112,14 @@ function ParamSettingsPage() {
   )
 }
 
+function ParamHostLivePage() {
+  return (
+    <RequireOrganizationRole roles={[...contentRoles]}>
+      <HostLivePage />
+    </RequireOrganizationRole>
+  )
+}
+
 export function App() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
@@ -134,6 +145,9 @@ export function App() {
           </GuestOnly>
         }
       />
+      <Route path="/join" element={<JoinPage />} />
+      <Route path="/join/:code" element={<JoinCodePage />} />
+      <Route path="/play/:sessionId" element={<ParticipantPlayPage />} />
       <Route element={<RequireAuth />}>
         <Route element={<AuthenticatedShell />}>
           <Route path="/app" element={<OrganizationSelectorPage />} />
@@ -146,6 +160,7 @@ export function App() {
           <Route path="questions/:questionId" element={<ParamQuestionEditorPage />} />
           <Route path="members" element={<ParamMembersPage />} />
           <Route path="settings" element={<ParamSettingsPage />} />
+          <Route path="live-sessions/:sessionId" element={<ParamHostLivePage />} />
         </Route>
       </Route>
       <Route path="/" element={<Navigate to="/app" replace />} />

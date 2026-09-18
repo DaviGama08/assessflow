@@ -1,5 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { assessmentsApi } from '../api/assessments'
+import { liveApi } from '../../live/api/live'
 import { questionsApi } from '../../questions/api/questions'
 import { AssessmentQuestionsPanel } from '../components/AssessmentQuestionsPanel'
 import type { Assessment, AssessmentQuestion } from '../types/assessment'
@@ -14,6 +16,7 @@ export function AssessmentBuilderPage({
   organizationId: string
   assessmentId: string
 }) {
+  const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('general')
   const [assessment, setAssessment] = useState<Assessment | null>(null)
   const [items, setItems] = useState<AssessmentQuestion[]>([])
@@ -77,6 +80,18 @@ export function AssessmentBuilderPage({
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not archive assessment.')
     } finally {
+      setBusy(false)
+    }
+  }
+
+  async function startLive() {
+    setBusy(true)
+    setError('')
+    try {
+      const session = await liveApi.create(organizationId, assessmentId)
+      navigate(`/app/organizations/${organizationId}/live-sessions/${session.id}`)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not start a live session.')
       setBusy(false)
     }
   }
@@ -174,6 +189,11 @@ export function AssessmentBuilderPage({
           {assessment?.status === 'DRAFT' && (
             <button disabled={busy} onClick={() => void publish()}>
               Publish
+            </button>
+          )}
+          {assessment?.status === 'PUBLISHED' && (
+            <button disabled={busy} onClick={() => void startLive()}>
+              Start live session
             </button>
           )}
           {assessment && assessment.status !== 'ARCHIVED' && (
