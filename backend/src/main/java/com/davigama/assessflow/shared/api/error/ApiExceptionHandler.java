@@ -1,6 +1,7 @@
 package com.davigama.assessflow.shared.api.error;
 
 import com.davigama.assessflow.shared.exception.AssessmentNotFoundException;
+import com.davigama.assessflow.identity.application.AuthException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
@@ -15,6 +16,15 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    @ExceptionHandler(AuthException.class)
+    ResponseEntity<ProblemDetail> auth(AuthException exception, HttpServletRequest request) {
+        HttpStatus status = switch (exception.getCode()) {
+            case "INVALID_CREDENTIALS" -> HttpStatus.UNAUTHORIZED;
+            case "EMAIL_ALREADY_REGISTERED" -> HttpStatus.CONFLICT;
+            default -> HttpStatus.BAD_REQUEST;
+        };
+        return problem(status, status.getReasonPhrase(), exception.getMessage(), exception.getCode(), request);
+    }
     @ExceptionHandler(AssessmentNotFoundException.class)
     ResponseEntity<ProblemDetail> notFound(AssessmentNotFoundException exception, HttpServletRequest request) {
         return problem(HttpStatus.NOT_FOUND, "Assessment not found", exception.getMessage(),

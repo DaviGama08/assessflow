@@ -32,9 +32,15 @@ class AssessmentApiIntegrationTest {
 
     @LocalServerPort int port;
     private final HttpClient client = HttpClient.newHttpClient();
+    private String accessToken;
 
     @Test
     void persistsAndManagesAssessmentThroughHttp() throws Exception {
+        assertThat(send("GET", "/api/v1/assessments", null).statusCode()).isEqualTo(401);
+        var registration = send("POST", "/api/v1/auth/register",
+                "{\"email\":\"assessment@example.com\",\"password\":\"secure-password-123\",\"displayName\":\"Assessment Tester\"}");
+        assertThat(registration.statusCode()).isEqualTo(200);
+        accessToken = registration.body().split("\"accessToken\":\"")[1].split("\"")[0];
         var invalid = send("POST", "/api/v1/assessments", "{\"title\":\"   \"}");
         assertThat(invalid.statusCode()).isEqualTo(400);
         assertThat(invalid.body()).contains("INVALID_REQUEST");
@@ -63,6 +69,7 @@ class AssessmentApiIntegrationTest {
     private HttpResponse<String> send(String method, String path, String body) throws Exception {
         HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
                 .header("Content-Type", "application/json");
+        if (accessToken != null) builder.header("Authorization", "Bearer " + accessToken);
         HttpRequest request = builder.method(method, body == null ? HttpRequest.BodyPublishers.noBody()
                 : HttpRequest.BodyPublishers.ofString(body)).build();
         return client.send(request, HttpResponse.BodyHandlers.ofString());
