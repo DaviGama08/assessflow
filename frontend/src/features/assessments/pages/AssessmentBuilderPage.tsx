@@ -84,6 +84,23 @@ export function AssessmentBuilderPage({
     }
   }
 
+  async function exportPackage() {
+    setBusy(true)
+    setError('')
+    try {
+      const pack = await assessmentsApi.exportPackage(organizationId, assessmentId)
+      const blob = new Blob([JSON.stringify(pack, null, 2)], { type: 'application/json' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `${assessment?.title ?? 'assessment'}.assessflow.json`
+      link.click()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not export the package.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function startLive() {
     setBusy(true)
     setError('')
@@ -192,9 +209,18 @@ export function AssessmentBuilderPage({
             </button>
           )}
           {assessment?.status === 'PUBLISHED' && (
-            <button disabled={busy} onClick={() => void startLive()}>
-              Start live session
-            </button>
+            <>
+              <button disabled={busy} onClick={() => void startLive()}>
+                Start live session
+              </button>
+              <button
+                className="buttonSecondary"
+                disabled={busy}
+                onClick={() => void exportPackage()}
+              >
+                Export package
+              </button>
+            </>
           )}
           {assessment && assessment.status !== 'ARCHIVED' && (
             <button className="buttonSecondary" disabled={busy} onClick={() => void archive()}>

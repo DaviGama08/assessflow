@@ -9,10 +9,13 @@ export function useLiveEvents(
   sessionId: string | undefined,
   token: string | null,
   onEvent: (event: LiveSocketEvent) => void,
+  role: 'host' | 'participant' = 'participant',
 ) {
   const [connection, setConnection] = useState('Connecting…')
   useEffect(() => {
     if (!sessionId || !token) return
+    const destination =
+      role === 'host' ? `/topic/host/sessions/${sessionId}` : `/topic/sessions/${sessionId}`
     const client = new Client({
       brokerURL: WS_URL,
       connectHeaders: { Authorization: `Bearer ${token}` },
@@ -21,7 +24,7 @@ export function useLiveEvents(
       reconnectDelay: 2000,
       onConnect: () => {
         setConnection('Connected')
-        client.subscribe(`/topic/sessions/${sessionId}`, (message) => {
+        client.subscribe(destination, (message) => {
           onEvent(JSON.parse(message.body) as LiveSocketEvent)
         })
       },
@@ -32,6 +35,6 @@ export function useLiveEvents(
     return () => {
       void client.deactivate()
     }
-  }, [sessionId, token, onEvent])
+  }, [sessionId, token, onEvent, role])
   return connection
 }

@@ -25,6 +25,8 @@ public class LiveParticipant {
     private LiveParticipantStatus status;
     @Column(name = "token_hash", nullable = false, length = 64)
     private String tokenHash;
+    @Column(name = "token_expires_at", nullable = false)
+    private Instant tokenExpiresAt;
     @Column(name = "joined_at", nullable = false)
     private Instant joinedAt;
     @Column(name = "last_seen_at", nullable = false)
@@ -32,19 +34,30 @@ public class LiveParticipant {
 
     protected LiveParticipant() {}
 
-    public LiveParticipant(UUID liveSessionId, String displayName, String tokenHash, Instant now) {
+    public LiveParticipant(UUID liveSessionId, String displayName, String tokenHash, Instant now, Instant tokenExpiresAt) {
         this.id = UUID.randomUUID();
         this.liveSessionId = liveSessionId;
         this.displayName = displayName.trim();
         this.status = LiveParticipantStatus.CONNECTED;
         this.tokenHash = tokenHash;
+        this.tokenExpiresAt = tokenExpiresAt;
         this.joinedAt = now;
         this.lastSeenAt = now;
     }
 
     public void connected(Instant now) {
-        this.status = LiveParticipantStatus.CONNECTED;
+        if (status != LiveParticipantStatus.LEFT) {
+            this.status = LiveParticipantStatus.CONNECTED;
+        }
         this.lastSeenAt = now;
+    }
+
+    public boolean tokenExpired(Instant now) {
+        return !now.isBefore(tokenExpiresAt);
+    }
+
+    public void expireAt(Instant instant) {
+        this.tokenExpiresAt = instant;
     }
 
     public void disconnected(Instant now) {
@@ -65,6 +78,7 @@ public class LiveParticipant {
     public String getDisplayName() { return displayName; }
     public LiveParticipantStatus getStatus() { return status; }
     public String getTokenHash() { return tokenHash; }
+    public Instant getTokenExpiresAt() { return tokenExpiresAt; }
     public Instant getJoinedAt() { return joinedAt; }
     public Instant getLastSeenAt() { return lastSeenAt; }
 }

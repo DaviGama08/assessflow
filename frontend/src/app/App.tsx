@@ -14,6 +14,7 @@ import { DashboardPage } from '../features/workspace/DashboardPage'
 import { OrganizationProvider } from '../features/workspace/OrganizationContext'
 import { SettingsPage } from '../features/workspace/SettingsPage'
 import { HostLivePage } from '../features/live/pages/HostLivePage'
+import { LocalLivePage } from '../features/live/pages/LocalLivePage'
 import { JoinCodePage, JoinPage } from '../features/live/pages/JoinPages'
 import { ParticipantPlayPage } from '../features/live/pages/ParticipantPlayPage'
 import { WorkspaceLayout } from '../features/workspace/WorkspaceLayout'
@@ -161,6 +162,14 @@ export function App() {
           <Route path="members" element={<ParamMembersPage />} />
           <Route path="settings" element={<ParamSettingsPage />} />
           <Route path="live-sessions/:sessionId" element={<ParamHostLivePage />} />
+          <Route
+            path="local-live"
+            element={
+              <RequireOrganizationRole roles={[...contentRoles]}>
+                <LocalLivePage />
+              </RequireOrganizationRole>
+            }
+          />
         </Route>
       </Route>
       <Route path="/" element={<Navigate to="/app" replace />} />

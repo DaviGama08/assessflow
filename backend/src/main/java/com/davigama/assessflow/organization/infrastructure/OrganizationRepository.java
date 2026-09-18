@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface OrganizationRepository extends JpaRepository<Organization, UUID> {
     boolean existsBySlug(String slug);
+    java.util.Optional<Organization> findBySlug(String slug);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select o from Organization o where o.id = :id")
     Optional<Organization> findByIdForUpdate(@Param("id") UUID id);

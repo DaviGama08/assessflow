@@ -10,6 +10,7 @@ type Props = {
 const items = [
   { suffix: '', label: 'Dashboard', end: true },
   { suffix: '/assessments', label: 'Assessments', content: true },
+  { suffix: '/local-live', label: 'Local Live', content: true },
   { suffix: '/questions', label: 'Question Bank', content: true },
   { suffix: '/members', label: 'Members' },
   { suffix: '/settings', label: 'Settings', workspace: true },

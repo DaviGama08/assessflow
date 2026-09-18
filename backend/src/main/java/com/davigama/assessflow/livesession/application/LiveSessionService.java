@@ -19,6 +19,7 @@ import com.davigama.assessflow.livesession.api.dto.LiveDtos.PublicQuestion;
 import com.davigama.assessflow.livesession.api.dto.LiveDtos.QuestionResults;
 import com.davigama.assessflow.livesession.api.dto.LiveDtos.Score;
 import com.davigama.assessflow.livesession.api.dto.LiveDtos.SessionResponse;
+import com.davigama.assessflow.livesession.domain.AnswerSelections;
 import com.davigama.assessflow.livesession.domain.JoinCodes;
 import com.davigama.assessflow.livesession.domain.LiveAnswer;
 import com.davigama.assessflow.livesession.domain.LiveEvent;
@@ -44,7 +45,7 @@ import java.security.SecureRandom;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,6 +71,7 @@ public class LiveSessionService {
     private final OrganizationAccess access;
     private final LiveSessionNotifier notifier;
     private final ParticipantAuthService participantAuth;
+    private final LiveSettings settings;
     private final Clock clock;
 
     public LiveSessionService(LiveSessionRepository sessions, LiveSessionQuestionRepository snapshots,
@@ -77,7 +79,7 @@ public class LiveSessionService {
                               AssessmentService assessments, AssessmentQuestionRepository assessmentQuestions,
                               QuestionRepository questions, OrganizationRepository organizations,
                               OrganizationAccess access, LiveSessionNotifier notifier,
-                              ParticipantAuthService participantAuth, Clock clock) {
+                              ParticipantAuthService participantAuth, LiveSettings settings, Clock clock) {
         this.sessions = sessions;
         this.snapshots = snapshots;
         this.participants = participants;
@@ -89,6 +91,7 @@ public class LiveSessionService {
         this.access = access;
         this.notifier = notifier;
         this.participantAuth = participantAuth;
+        this.settings = settings;
         this.clock = clock;
     }
 
@@ -140,11 +143,12 @@ public class LiveSessionService {
     public JoinResponse join(JoinRequest request) {
         LiveSession session = findByCode(request.code());
         session.requireJoinable();
+        Instant now = clock.instant();
         String raw = participantAuth.newRawToken();
         LiveParticipant participant = participants.save(new LiveParticipant(session.getId(), request.displayName(),
-                ParticipantAuthService.hash(raw), clock.instant()));
+                ParticipantAuthService.hash(raw), now, now.plus(settings.participantTokenTtl())));
         String title = assessments.requireOwned(session.getOrganizationId(), session.getAssessmentId()).getTitle();
-        notifier.publish(session.getId(), new LiveEvent(LiveEventType.PARTICIPANT_JOINED,
+        notifier.toHost(session.getId(), new LiveEvent(LiveEventType.PARTICIPANT_JOINED,
                 ParticipantResponse.from(participant)));
         return new JoinResponse(participant.getId(), session.getId(), title, session.getStatus(),
                 session.getJoinCode(), raw);
@@ -172,8 +176,8 @@ public class LiveSessionService {
     public SessionResponse start(User actor, UUID organizationId, UUID sessionId) {
         LiveSession session = host(actor, organizationId, sessionId);
         session.start(clock.instant());
-        notifier.publish(session.getId(), new LiveEvent(LiveEventType.SESSION_STARTED, Map.of("status", session.getStatus())));
-        notifier.publish(session.getId(), new LiveEvent(LiveEventType.QUESTION_STARTED, publicQuestion(session)));
+        notifier.toBoth(session.getId(), new LiveEvent(LiveEventType.SESSION_STARTED, Map.of("status", session.getStatus())));
+        notifier.toBoth(session.getId(), new LiveEvent(LiveEventType.QUESTION_STARTED, publicQuestion(session)));
         return response(session);
     }
 
@@ -182,8 +186,8 @@ public class LiveSessionService {
         LiveSession session = host(actor, organizationId, sessionId);
         session.endQuestion(clock.instant());
         QuestionResults results = results(session);
-        notifier.publish(session.getId(), new LiveEvent(LiveEventType.QUESTION_ENDED, Map.of("questionIndex", session.getCurrentQuestionIndex())));
-        notifier.publish(session.getId(), new LiveEvent(LiveEventType.QUESTION_RESULTS, publicResults(results)));
+        notifier.toHost(session.getId(), new LiveEvent(LiveEventType.QUESTION_ENDED, Map.of("questionIndex", session.getCurrentQuestionIndex())));
+        notifier.toBoth(session.getId(), new LiveEvent(LiveEventType.QUESTION_RESULTS, publicResults(results)));
         return results;
     }
 
@@ -196,7 +200,7 @@ public class LiveSessionService {
             throw new DomainException(HttpStatus.CONFLICT, "NO_MORE_QUESTIONS", "There are no more questions.");
         }
         session.nextQuestion(next, clock.instant());
-        notifier.publish(session.getId(), new LiveEvent(LiveEventType.QUESTION_STARTED, publicQuestion(session)));
+        notifier.toBoth(session.getId(), new LiveEvent(LiveEventType.QUESTION_STARTED, publicQuestion(session)));
         return response(session);
     }
 
@@ -205,7 +209,7 @@ public class LiveSessionService {
         LiveSession session = host(actor, organizationId, sessionId);
         if (session.isQuestionOpen()) session.endQuestion(clock.instant());
         session.finish(clock.instant());
-        notifier.publish(session.getId(), new LiveEvent(LiveEventType.SESSION_FINISHED, Map.of("status", session.getStatus())));
+        notifier.toBoth(session.getId(), new LiveEvent(LiveEventType.SESSION_FINISHED, Map.of("status", session.getStatus())));
         return response(session);
     }
 
@@ -213,7 +217,7 @@ public class LiveSessionService {
     public SessionResponse cancel(User actor, UUID organizationId, UUID sessionId) {
         LiveSession session = host(actor, organizationId, sessionId);
         session.cancel(clock.instant());
-        notifier.publish(session.getId(), new LiveEvent(LiveEventType.SESSION_CANCELLED, Map.of("status", session.getStatus())));
+        notifier.toBoth(session.getId(), new LiveEvent(LiveEventType.SESSION_CANCELLED, Map.of("status", session.getStatus())));
         return response(session);
     }
 
@@ -227,24 +231,53 @@ public class LiveSessionService {
         session.requireQuestionOpen();
         LiveSessionQuestion question = currentQuestion(session);
         Set<UUID> allowed = question.getOptions().stream().map(LiveSessionQuestionOption::getId).collect(Collectors.toSet());
-        if (!allowed.containsAll(request.optionIds()) || request.optionIds().isEmpty()) {
-            throw new DomainException(HttpStatus.BAD_REQUEST, "INVALID_ANSWER_OPTION",
-                    "One or more options do not belong to the current question.");
-        }
+        Set<UUID> selected = AnswerSelections.validate(question.getQuestionType(), request.optionIds(), allowed);
         if (answers.existsByLiveSessionIdAndLiveSessionQuestionIdAndParticipantId(
                 session.getId(), question.getId(), principal.participantId())) {
             throw new DomainException(HttpStatus.CONFLICT, "ANSWER_ALREADY_SUBMITTED", "This question was already answered.");
         }
         try {
             answers.saveAndFlush(new LiveAnswer(session.getId(), question.getId(), principal.participantId(),
-                    new HashSet<>(request.optionIds()), clock.instant()));
+                    selected, clock.instant()));
         } catch (DataIntegrityViolationException ex) {
             throw new DomainException(HttpStatus.CONFLICT, "ANSWER_ALREADY_SUBMITTED", "This question was already answered.");
         }
         long answered = answers.countByLiveSessionIdAndLiveSessionQuestionId(session.getId(), question.getId());
         long total = participants.countByLiveSessionIdAndStatusNot(session.getId(), LiveParticipantStatus.LEFT);
-        notifier.publish(session.getId(), new LiveEvent(LiveEventType.ANSWER_RECEIVED,
+        notifier.toHost(session.getId(), new LiveEvent(LiveEventType.ANSWER_RECEIVED,
                 Map.of("answered", answered, "participants", total)));
+    }
+
+    @Transactional(readOnly = true)
+    public String exportResultsCsv(User actor, UUID organizationId, UUID sessionId) {
+        LiveSession session = host(actor, organizationId, sessionId);
+        String title = assessments.requireOwned(organizationId, session.getAssessmentId()).getTitle();
+        StringBuilder csv = new StringBuilder("session,assessment,participant,status,pointsEarned,pointsPossible,percentage\n");
+        for (LiveParticipant participant : participants.findByLiveSessionIdOrderByJoinedAtAsc(sessionId)) {
+            Score score = score(session, participant.getId());
+            csv.append(session.getId()).append(',').append(csvEscape(title)).append(',')
+                    .append(csvEscape(participant.getDisplayName())).append(',')
+                    .append(participant.getStatus()).append(',')
+                    .append(score.pointsEarned()).append(',').append(score.pointsPossible()).append(',')
+                    .append(score.percentage()).append('\n');
+        }
+        return csv.toString();
+    }
+
+    private String csvEscape(String value) {
+        String text = value == null ? "" : value.replace("\"", "\"\"");
+        return '"' + text + '"';
+    }
+
+    @Transactional
+    public void leave(ParticipantPrincipal principal, UUID sessionId) {
+        if (!principal.sessionId().equals(sessionId)) {
+            throw new DomainException(HttpStatus.FORBIDDEN, "PARTICIPANT_NOT_FOUND", "Participant does not belong to this session.");
+        }
+        LiveParticipant participant = participants.findByIdAndLiveSessionId(principal.participantId(), sessionId)
+                .orElseThrow(() -> new DomainException(HttpStatus.NOT_FOUND, "PARTICIPANT_NOT_FOUND", "Participant not found."));
+        participant.leave(clock.instant());
+        notifier.toHost(sessionId, new LiveEvent(LiveEventType.PARTICIPANT_LEFT, ParticipantResponse.from(participant)));
     }
 
     @Transactional
@@ -278,7 +311,12 @@ public class LiveSessionService {
 
     @Transactional
     public void markDisconnected(UUID participantId) {
-        participants.findById(participantId).ifPresent(participant -> participant.disconnected(clock.instant()));
+        participants.findById(participantId).ifPresent(participant -> {
+            if (participant.getStatus() == LiveParticipantStatus.LEFT) return;
+            participant.disconnected(clock.instant());
+            notifier.toHost(participant.getLiveSessionId(),
+                    new LiveEvent(LiveEventType.PRESENCE_CHANGED, ParticipantResponse.from(participant)));
+        });
     }
 
     private LiveSession persistWithJoinCode(UUID organizationId, UUID assessmentId, UUID userId) {

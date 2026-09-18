@@ -5,6 +5,7 @@ export type LiveStatus = 'WAITING' | 'ACTIVE' | 'FINISHED' | 'CANCELLED'
 export type LiveEventType =
   | 'PARTICIPANT_JOINED'
   | 'PARTICIPANT_LEFT'
+  | 'PRESENCE_CHANGED'
   | 'SESSION_STARTED'
   | 'QUESTION_STARTED'
   | 'ANSWER_RECEIVED'
@@ -121,6 +122,8 @@ export const liveApi = {
       },
       token,
     ),
+  leave: (sessionId: string, token: string) =>
+    guest<void>(`/live-sessions/${sessionId}/leave`, { method: 'POST' }, token),
 }
 
 async function guest<T>(path: string, options?: RequestInit, token?: string): Promise<T> {
