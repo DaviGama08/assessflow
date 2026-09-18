@@ -1,8 +1,19 @@
+server:
+  shutdown: graceful
+  # Do not trust X-Forwarded-For from arbitrary clients. Set framework/native only
+  # behind a reverse proxy that overwrites forwarded headers, and set APP_HTTP_TRUSTED_PROXY=true.
+  forward-headers-strategy: ${SERVER_FORWARD_HEADERS_STRATEGY:none}
 spring:
   application:
     name: assessflow
   profiles:
     default: local
+  lifecycle:
+    timeout-per-shutdown-phase: ${SHUTDOWN_TIMEOUT:30s}
+  datasource:
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      minimum-idle: ${DB_POOL_MIN:2}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -18,6 +29,25 @@ app:
     max-questions: ${APP_LOCAL_PACKAGE_MAX_QUESTIONS:200}
     max-options-per-question: ${APP_LOCAL_PACKAGE_MAX_OPTIONS:20}
     max-payload-bytes: ${APP_LOCAL_PACKAGE_MAX_BYTES:2097152}
+  realtime:
+    broker-mode: ${APP_REALTIME_BROKER_MODE:simple}
+    relay:
+      host: ${RABBITMQ_HOST:localhost}
+      port: ${RABBITMQ_STOMP_PORT:61613}
+      username: ${RABBITMQ_USERNAME:}
+      password: ${RABBITMQ_PASSWORD:}
+      virtual-host: ${RABBITMQ_VHOST:/}
+  redis:
+    enabled: ${APP_REDIS_ENABLED:false}
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+  http:
+    trusted-proxy: ${APP_HTTP_TRUSTED_PROXY:false}
+  rate-limit:
+    join-per-minute: ${APP_RATE_LIMIT_JOIN:30}
+    preview-per-minute: ${APP_RATE_LIMIT_PREVIEW:60}
+    auth-per-minute: ${APP_RATE_LIMIT_AUTH:20}
 management:
   endpoints:
     web:
@@ -26,3 +56,19 @@ management:
   endpoint:
     health:
       show-details: never
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: ping,livenessState
+        readiness:
+          include: ping,readinessState,db
+  health:
+    redis:
+      enabled: false
+  tracing:
+    enabled: false
+  prometheus:
+    metrics:
+      export:
+        enabled: false

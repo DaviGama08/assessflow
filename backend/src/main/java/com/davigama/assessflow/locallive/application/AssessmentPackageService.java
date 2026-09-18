@@ -24,6 +24,7 @@ import com.davigama.assessflow.questionbank.infrastructure.QuestionCategoryRepos
 import com.davigama.assessflow.questionbank.infrastructure.QuestionRepository;
 import com.davigama.assessflow.shared.Slug;
 import com.davigama.assessflow.shared.exception.DomainException;
+import com.davigama.assessflow.shared.observability.AssessFlowMetrics;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -45,12 +46,14 @@ public class AssessmentPackageService {
     private final OrganizationService organizationService;
     private final OrganizationAccess access;
     private final LocalPackageSettings settings;
+    private final AssessFlowMetrics metrics;
     private final Clock clock;
 
     public AssessmentPackageService(AssessmentRepository assessments, AssessmentQuestionRepository links,
                                     QuestionRepository questions, QuestionCategoryRepository categories,
                                     OrganizationRepository organizations, OrganizationService organizationService,
-                                    OrganizationAccess access, LocalPackageSettings settings, Clock clock) {
+                                    OrganizationAccess access, LocalPackageSettings settings,
+                                    AssessFlowMetrics metrics, Clock clock) {
         this.assessments = assessments;
         this.links = links;
         this.questions = questions;
@@ -59,6 +62,7 @@ public class AssessmentPackageService {
         this.organizationService = organizationService;
         this.access = access;
         this.settings = settings;
+        this.metrics = metrics;
         this.clock = clock;
     }
 
@@ -170,6 +174,7 @@ public class AssessmentPackageService {
         }
         assessment.publish(now);
         assessments.save(assessment);
+        metrics.packageImport();
         return new PackageImportResponse(organization.getId(), assessment.getId(), assessment.getTitle());
     }
 

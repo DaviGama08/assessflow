@@ -36,6 +36,7 @@ import com.davigama.assessflow.livesession.infrastructure.LiveSessionQuestionRep
 import com.davigama.assessflow.livesession.infrastructure.LiveSessionRepository;
 import com.davigama.assessflow.livesession.realtime.LiveSessionNotifier;
 import com.davigama.assessflow.organization.application.OrganizationAccess;
+import com.davigama.assessflow.shared.observability.AssessFlowMetrics;
 import com.davigama.assessflow.organization.application.OrganizationException;
 import com.davigama.assessflow.organization.infrastructure.OrganizationRepository;
 import com.davigama.assessflow.questionbank.domain.AnswerOption;
@@ -73,6 +74,7 @@ public class LiveSessionService {
     private final LiveSessionNotifier notifier;
     private final ParticipantAuthService participantAuth;
     private final LiveSettings settings;
+    private final AssessFlowMetrics metrics;
     private final Clock clock;
 
     public LiveSessionService(LiveSessionRepository sessions, LiveSessionQuestionRepository snapshots,
@@ -80,7 +82,8 @@ public class LiveSessionService {
                               AssessmentService assessments, AssessmentQuestionRepository assessmentQuestions,
                               QuestionRepository questions, OrganizationRepository organizations,
                               OrganizationAccess access, LiveSessionNotifier notifier,
-                              ParticipantAuthService participantAuth, LiveSettings settings, Clock clock) {
+                              ParticipantAuthService participantAuth, LiveSettings settings,
+                              AssessFlowMetrics metrics, Clock clock) {
         this.sessions = sessions;
         this.snapshots = snapshots;
         this.participants = participants;
@@ -93,6 +96,7 @@ public class LiveSessionService {
         this.notifier = notifier;
         this.participantAuth = participantAuth;
         this.settings = settings;
+        this.metrics = metrics;
         this.clock = clock;
     }
 
@@ -151,6 +155,7 @@ public class LiveSessionService {
         String title = assessments.requireOwned(session.getOrganizationId(), session.getAssessmentId()).getTitle();
         notifier.toHost(session.getId(), new LiveEvent(LiveEventType.PARTICIPANT_JOINED,
                 ParticipantResponse.from(participant)));
+        metrics.join();
         return new JoinResponse(participant.getId(), session.getId(), title, session.getStatus(),
                 session.getJoinCode(), raw);
     }
@@ -179,6 +184,7 @@ public class LiveSessionService {
         session.start(clock.instant());
         notifier.toBoth(session.getId(), new LiveEvent(LiveEventType.SESSION_STARTED, Map.of("status", session.getStatus())));
         notifier.toBoth(session.getId(), new LiveEvent(LiveEventType.QUESTION_STARTED, publicQuestion(session)));
+        metrics.sessionStarted();
         return response(session);
     }
 
@@ -247,6 +253,7 @@ public class LiveSessionService {
         long total = participants.countByLiveSessionIdAndStatusNot(session.getId(), LiveParticipantStatus.LEFT);
         notifier.toHost(session.getId(), new LiveEvent(LiveEventType.ANSWER_RECEIVED,
                 Map.of("answered", answered, "participants", total)));
+        metrics.answer();
     }
 
     @Transactional(readOnly = true)

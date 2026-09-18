@@ -15,6 +15,10 @@ app:
     allow-private-lan: true
   local-live:
     enabled: true
+  realtime:
+    broker-mode: simple
+  redis:
+    enabled: false
     host: ${LOCAL_LIVE_HOST:}
     hotspot-script: ${LOCAL_LIVE_HOTSPOT_SCRIPT:../scripts/local-live/hotspot.sh}
 logging:
