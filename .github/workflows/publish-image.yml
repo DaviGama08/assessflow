@@ -55,7 +55,7 @@ jobs:
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/out" \
             aquasec/trivy:0.67.2 image --format cyclonedx --output /out/sbom.cdx.json \
             ${{ steps.meta.outputs.tags }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: assessflow-backend-sbom
           path: sbom.cdx.json
