@@ -17,3 +17,4 @@ Multi-tenant assessments, question bank, live sessions, Local Live without Inter
 ### Changed
 - Production profile defaults to lean mode (simple broker, Redis off)
 - README describes completed Phases 1–6 without claiming unimplemented brokers
+- Embedded Tomcat pinned to 11.0.26 (Spring Boot 4.1.1 still manages 11.0.24)
