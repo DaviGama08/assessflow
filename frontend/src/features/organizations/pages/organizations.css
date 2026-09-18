@@ -1,0 +1,120 @@
+.orgPage {
+  min-height: calc(100vh - 64px);
+  padding: 2rem 1rem 4rem;
+  background: #f5f7fc;
+}
+.orgContainer {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.orgHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.orgHeading h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+.orgHeading p {
+  color: #53627b;
+}
+.orgEyebrow {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #5369e8 !important;
+}
+.orgGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.orgCard,
+.orgPanel {
+  background: #fff;
+  border: 1px solid #dce2ed;
+  border-radius: 14px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 24px #24314b0a;
+}
+.orgCard {
+  display: grid;
+  gap: 0.5rem;
+  color: inherit;
+  text-decoration: none;
+}
+.orgCard:hover {
+  border-color: #5369e8;
+}
+.orgCard strong {
+  font-size: 1.2rem;
+}
+.orgCard span,
+.orgCard small {
+  color: #53627b;
+}
+.orgPanel {
+  margin-top: 1.5rem;
+}
+.orgPanel h2 {
+  margin: 0 0 0.5rem;
+}
+.orgPanel p {
+  color: #53627b;
+}
+.orgForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.orgForm label {
+  display: grid;
+  gap: 0.4rem;
+  flex: 1 1 200px;
+  font-weight: 600;
+}
+.orgForm input,
+.orgForm select,
+.memberRow select {
+  min-height: 43px;
+  padding: 0.65rem;
+  border: 1px solid #b8c4d9;
+  border-radius: 8px;
+  font: inherit;
+}
+.orgError {
+  padding: 1rem;
+  color: #a22d26;
+  background: #fff4f3;
+  border-radius: 8px;
+}
+.memberList {
+  display: grid;
+}
+.memberRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid #e7ebf2;
+}
+.memberRow > div {
+  display: grid;
+  gap: 0.3rem;
+  flex: 1 1 230px;
+}
+.memberRow small {
+  color: #53627b;
+}
+@media (max-width: 600px) {
+  .orgHeading {
+    display: block;
+  }
+}
