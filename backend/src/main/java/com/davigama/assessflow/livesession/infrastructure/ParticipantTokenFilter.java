@@ -2,11 +2,13 @@ package com.davigama.assessflow.livesession.infrastructure;
 
 import com.davigama.assessflow.livesession.application.ParticipantAuthService;
 import com.davigama.assessflow.livesession.application.ParticipantPrincipal;
+import com.davigama.assessflow.shared.exception.DomainException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -26,10 +28,18 @@ public class ParticipantTokenFilter extends OncePerRequestFilter {
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
             String header = request.getHeader("Authorization");
             if (header != null && header.startsWith("Bearer ")) {
-                ParticipantPrincipal principal = participants.authenticate(header.substring(7));
-                if (principal != null) {
-                    SecurityContextHolder.getContext().setAuthentication(
-                            new UsernamePasswordAuthenticationToken(principal, null, java.util.List.of()));
+                try {
+                    ParticipantPrincipal principal = participants.authenticate(header.substring(7));
+                    if (principal != null) {
+                        SecurityContextHolder.getContext().setAuthentication(
+                                new UsernamePasswordAuthenticationToken(principal, null, java.util.List.of()));
+                    }
+                } catch (DomainException ex) {
+                    response.setStatus(ex.getStatus().value());
+                    response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+                    response.getWriter().write("{\"title\":\"Unauthorized\",\"status\":" + ex.getStatus().value()
+                            + ",\"code\":\"" + ex.getCode() + "\",\"detail\":\"" + ex.getMessage() + "\"}");
+                    return;
                 }
             }
         }

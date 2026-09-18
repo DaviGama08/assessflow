@@ -12,6 +12,8 @@ spring:
 app:
   auth:
     secure-cookie: true
+  live:
+    participant-token-ttl: ${APP_LIVE_PARTICIPANT_TOKEN_TTL:12h}
 management:
   endpoints:
     web:
