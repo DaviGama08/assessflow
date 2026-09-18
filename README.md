@@ -106,7 +106,7 @@ CI runs backend tests and frontend formatting, lint, tests and build checks on `
 - Phase 1.5 — AssessFlow product identity ✅
 - Phase 2 — Organizations, identity, multi-tenancy, Question Bank, Assessment Builder and branding ✅
 - Phase 3 — Live Sessions, WebSocket, join codes and QR Code ✅
-- Phase 4 — Local Live Mode, Wi-Fi / hotspot, captive portal, LAN URL
+- Phase 4 — Local Live Mode, LAN join QR, assessment packages, Ubuntu hotspot helper ✅
 - Phase 5 — Redis, messaging, observability and production scaling
 
-Phase 4 and later are plans. Live sessions run on a single instance: the STOMP simple broker does not fan out across processes. Redis, RabbitMQ, Kafka, Wi-Fi QR and captive portal are not implemented.
+Local Live works without Internet, but participating devices must share a local network. See [Local Live](docs/local-live.md) and [ADR 0006](docs/adr/0006-local-live-mode.md). The STOMP simple broker remains single-instance. Redis, RabbitMQ, Kafka and automatic cloud sync are not implemented.
