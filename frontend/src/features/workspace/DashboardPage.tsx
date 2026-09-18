@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { organizationsApi, type Dashboard, type Role } from '../organizations/api/organizations'
-import { navigate } from '../../shared/navigation'
 import { canManageContent } from '../../shared/permissions'
 
-export function DashboardPage({ organizationId }: { organizationId: string }) {
+export function DashboardPage() {
+  const { organizationId = '' } = useParams()
+  const navigate = useNavigate()
   const [data, setData] = useState<Dashboard | null>(null)
   const [role, setRole] = useState<Role>()
   const [error, setError] = useState('')

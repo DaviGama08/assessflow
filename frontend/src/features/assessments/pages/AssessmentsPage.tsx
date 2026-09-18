@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { assessmentsApi } from '../api/assessments'
 import { AssessmentList } from '../components/AssessmentList'
-import { navigate } from '../../../shared/navigation'
+import { useNavigate } from 'react-router-dom'
 import type { Assessment, Page } from '../types/assessment'
 import styles from './AssessmentsPage.module.css'
 
 export function AssessmentsPage({ organizationId }: { organizationId: string }) {
+  const navigate = useNavigate()
   const [page, setPage] = useState(0)
   const [data, setData] = useState<Page<Assessment> | null>(null)
   const [loading, setLoading] = useState(true)

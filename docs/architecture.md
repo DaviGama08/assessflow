@@ -8,7 +8,9 @@ Users register with a unique email and a BCrypt password hash. Opaque access and
 
 ## Organizations and roles
 
-An organization is the tenant. Membership binds a user to an organization with role OWNER, ADMIN, INSTRUCTOR or PARTICIPANT. The last active OWNER cannot be removed or demoted. Member management is limited to OWNER and ADMIN.
+An organization is the tenant. Membership binds a user to an organization with role OWNER, ADMIN, INSTRUCTOR or PARTICIPANT. The last active OWNER cannot be removed or demoted. Member management is limited to OWNER and ADMIN. Any active member may view the paginated member list; INSTRUCTOR and PARTICIPANT do not see add, role or remove controls. Direct `/settings` URLs are blocked in the SPA for non-managers, and the API still rejects unauthorized edits.
+
+Assessments start as DRAFT. OWNER, ADMIN and INSTRUCTOR publish through `POST .../publish` only when at least one ACTIVE question is linked. Publish and archive are domain transitions (`DRAFT → PUBLISHED`, `DRAFT|PUBLISHED → ARCHIVED`); status cannot be set by a generic DTO.
 
 ## Tenant boundaries
 
@@ -20,7 +22,11 @@ User ──< OrganizationMember >── Organization
                                   ├── Assessment ──< AssessmentQuestion
                                   ├── Question <────────────┘
                                   ├── QuestionCategory
-                                  └── OrganizationBranding
+                                  ├── OrganizationBranding
+                                  └── LiveSession
+                                        ├── LiveSessionQuestion ──< LiveSessionQuestionOption
+                                        ├── LiveParticipant
+                                        └── LiveAnswer
 ```
 
 ## Assessments
@@ -41,6 +47,10 @@ Each organization has optional branding: display name, logo URL and `#RRGGBB` co
 
 ## Frontend
 
-Authenticated users pick an organization, then work inside `/app/organizations/:organizationId` with Dashboard, Assessments, Question Bank, Members and Settings. Navigation is role-aware. The API remains the authority.
+Authenticated users pick an organization, then work inside `/app/organizations/:organizationId` with Dashboard, Assessments, Question Bank, Members and Settings. Navigation is role-aware. The API remains the authority. Public join routes `/join` and `/join/:code` do not require login.
 
-Live sessions, WebSocket, join codes, QR codes, Redis and brokers are out of scope until Phase 3.
+## Live sessions
+
+OWNER, ADMIN and INSTRUCTOR create a live session from a **PUBLISHED** assessment. The API copies questions and options into `LiveSessionQuestion` snapshots so later bank edits do not change an in-flight session. PostgreSQL stores status, the current question, participants and answers. REST handles commands; STOMP at `/ws` notifies `/topic/sessions/{sessionId}`. Guests join with a six-character code and receive an opaque participant token. The QR encodes only `{VITE_PUBLIC_APP_URL}/join/{code}`. See [ADR 0005](adr/0005-live-session-realtime.md).
+
+Local Live Mode, Wi-Fi QR, captive portal, Redis and message brokers are out of scope until later phases.

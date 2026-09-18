@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import type { User } from '../../auth/api/auth'
 import { organizationsApi, type Member, type Organization, type Role } from '../api/organizations'
-import { navigate } from '../../../shared/navigation'
+import { Link, useNavigate } from 'react-router-dom'
 import { canManageMembers } from '../../../shared/permissions'
 import './organizations.css'
 
@@ -10,6 +10,7 @@ function errorText(cause: unknown) {
 }
 
 export function OrganizationSelectorPage() {
+  const navigate = useNavigate()
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
@@ -58,19 +59,15 @@ export function OrganizationSelectorPage() {
         ) : organizations.length > 0 ? (
           <section className="orgGrid" aria-label="Your organizations">
             {organizations.map((organization) => (
-              <a
+              <Link
                 className="orgCard"
-                href={`/app/organizations/${organization.id}`}
+                to={`/app/organizations/${organization.id}`}
                 key={organization.id}
-                onClick={(event) => {
-                  event.preventDefault()
-                  navigate(`/app/organizations/${organization.id}`)
-                }}
               >
                 <strong>{organization.name}</strong>
                 <span>{organization.slug}</span>
                 <small>{organization.status}</small>
-              </a>
+              </Link>
             ))}
           </section>
         ) : !error ? (
@@ -112,12 +109,16 @@ export function OrganizationSelectorPage() {
 export function MembersPage({ id, user }: { id: string; user: User }) {
   const [organization, setOrganization] = useState<Organization | null>(null)
   const [members, setMembers] = useState<Member[]>([])
+  const [page, setPage] = useState(0)
+  const [first, setFirst] = useState(true)
+  const [last, setLast] = useState(true)
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<Role>('PARTICIPANT')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
-  const currentRole = members.find((member) => member.userId === user.id)?.role
+  const currentRole =
+    organization?.currentUserRole ?? members.find((member) => member.userId === user.id)?.role
   const ownerCount = members.filter((member) => member.role === 'OWNER').length
   const manager = canManageMembers(currentRole)
   const roles: Role[] =
@@ -126,17 +127,22 @@ export function MembersPage({ id, user }: { id: string; user: User }) {
       : ['ADMIN', 'INSTRUCTOR', 'PARTICIPANT']
 
   useEffect(() => {
-    Promise.all([organizationsApi.get(id), organizationsApi.members(id)])
+    Promise.all([organizationsApi.get(id), organizationsApi.members(id, page)])
       .then(([organizationResult, memberResult]) => {
         setOrganization(organizationResult)
-        setMembers(memberResult)
+        setMembers(memberResult.content)
+        setFirst(memberResult.first)
+        setLast(memberResult.last)
       })
       .catch((cause) => setError(errorText(cause)))
       .finally(() => setLoading(false))
-  }, [id])
+  }, [id, page])
 
   async function reload() {
-    setMembers(await organizationsApi.members(id))
+    const memberResult = await organizationsApi.members(id, page)
+    setMembers(memberResult.content)
+    setFirst(memberResult.first)
+    setLast(memberResult.last)
   }
   async function add(event: FormEvent) {
     event.preventDefault()
@@ -200,7 +206,7 @@ export function MembersPage({ id, user }: { id: string; user: User }) {
             <h2>People</h2>
             <div className="memberList">
               {members.map((member) => {
-                const lastOwner = member.role === 'OWNER' && ownerCount === 1
+                const lastOwner = member.role === 'OWNER' && ownerCount === 1 && first && last
                 const canManage =
                   manager && !lastOwner && (currentRole === 'OWNER' || member.role !== 'OWNER')
                 return (
@@ -237,6 +243,22 @@ export function MembersPage({ id, user }: { id: string; user: User }) {
                   </div>
                 )
               })}
+            </div>
+            <div className="inlineActions" style={{ marginTop: '1rem' }}>
+              <button
+                className="buttonSecondary"
+                disabled={first || busy}
+                onClick={() => setPage(page - 1)}
+              >
+                Previous
+              </button>
+              <button
+                className="buttonSecondary"
+                disabled={last || busy}
+                onClick={() => setPage(page + 1)}
+              >
+                Next
+              </button>
             </div>
           </section>
           {manager && (

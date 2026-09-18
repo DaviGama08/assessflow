@@ -6,7 +6,7 @@ AssessFlow evolved from the academic **Distributed Quiz Platform**, which explor
 
 ## Current scope
 
-Phase 2 provides authentication, organizations, role-based access, multi-tenancy, a question bank, an assessment builder and organization branding. See [architecture](docs/architecture.md), [academic architecture](docs/legacy-architecture.md), [ADR 0001](docs/adr/0001-modular-monolith.md), [ADR 0002](docs/adr/0002-authentication-strategy.md), [ADR 0003](docs/adr/0003-multi-tenancy-strategy.md) and [ADR 0004](docs/adr/0004-question-bank-reuse.md).
+Phase 3 adds live sessions on top of Phase 2: published assessments, join codes, QR, a waiting room, WebSocket/STOMP, live questions, answers, results and reconnect. See [architecture](docs/architecture.md), [academic architecture](docs/legacy-architecture.md), [ADR 0001](docs/adr/0001-modular-monolith.md), [ADR 0002](docs/adr/0002-authentication-strategy.md), [ADR 0003](docs/adr/0003-multi-tenancy-strategy.md), [ADR 0004](docs/adr/0004-question-bank-reuse.md) and [ADR 0005](docs/adr/0005-live-session-realtime.md).
 
 ```text
 React + TypeScript + Vite
@@ -27,10 +27,11 @@ PostgreSQL 17
 1. Copy `.env.example` to `.env`. Its credentials are for local development only. Keep `.env` untracked.
 2. Run `docker compose up -d postgres` from the repository root. Wait for the container healthcheck. The default host port is 55432; set `POSTGRES_PORT` and the matching port in `DB_URL` to change it.
 3. In another terminal, run `cd backend && ./mvnw spring-boot:run`. The default `local` profile uses the Compose database. Override `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, and `APP_CORS_ALLOWED_ORIGINS` when needed.
-4. In another terminal, run `cd frontend && npm ci && npm run dev`. Open <http://localhost:5173>. Set `VITE_API_BASE_URL` if the API is elsewhere; it defaults to `http://localhost:8080/api/v1`.
+4. In another terminal, run `cd frontend && npm ci && npm run dev`. Open <http://localhost:5173>. Set `VITE_API_BASE_URL` if the API is elsewhere; it defaults to `http://localhost:8080/api/v1`. Set `VITE_PUBLIC_APP_URL` to the URL encoded in join QR codes (default `http://localhost:5173`) and `VITE_WS_URL` for STOMP (default `ws://localhost:8080/ws`).
 5. Check <http://localhost:8080/actuator/health> for `{"status":"UP"}`.
+6. Publish an assessment, click **Start live session**, and open `/join/{code}` in another browser. Guests do not need an account.
 
-The default database and local user are `assessflow` and `assessflow_local`. Flyway applies `V1` through `V8` on an empty database; Hibernate validates the schema at startup. `V5` deletes assessments created before organization scoping because they cannot be attributed to a tenant.
+The default database and local user are `assessflow` and `assessflow_local`. Flyway applies `V1` through `V12` on an empty database; Hibernate validates the schema at startup. `V5` deletes assessments created before organization scoping because they cannot be attributed to a tenant. `V9`–`V12` add live sessions, question snapshots, participants and answers.
 
 ## Implemented
 
@@ -42,6 +43,9 @@ The default database and local user are `assessflow` and `assessflow_local`. Fly
 - Reusable question bank with categories and option validation
 - Assessment builder that links bank questions with points and order
 - Organization branding (display name, logo URL, colors) without custom HTML/CSS/JS
+- Assessment lifecycle: `DRAFT → PUBLISHED → ARCHIVED` through explicit publish/archive endpoints
+- Live sessions from published assessments, with join codes, QR, waiting room and guest participants
+- WebSocket/STOMP events, REST answer submission, per-question results and reconnect from persisted state
 
 ## API
 
@@ -68,8 +72,22 @@ The default database and local user are `assessflow` and `assessflow_local`. Fly
 | POST/GET | `/api/v1/organizations/{organizationId}/questions` | Create / list questions |
 | GET/PUT/DELETE | `/api/v1/organizations/{organizationId}/questions/{questionId}` | Detail / update / archive |
 | POST/GET | `/api/v1/organizations/{organizationId}/question-categories` | Create / list categories |
+| POST | `/api/v1/organizations/{organizationId}/assessments/{assessmentId}/publish` | Publish a draft |
+| POST | `/api/v1/organizations/{organizationId}/assessments/{assessmentId}/archive` | Archive |
+| POST | `/api/v1/organizations/{organizationId}/assessments/{assessmentId}/live-sessions` | Create a live session |
+| GET | `/api/v1/organizations/{organizationId}/live-sessions/{sessionId}` | Host session detail |
+| POST | `/api/v1/organizations/{organizationId}/live-sessions/{sessionId}/start` | Start (first question) |
+| POST | `/api/v1/organizations/{organizationId}/live-sessions/{sessionId}/questions/end` | Close current question |
+| POST | `/api/v1/organizations/{organizationId}/live-sessions/{sessionId}/questions/next` | Open the next question |
+| POST | `/api/v1/organizations/{organizationId}/live-sessions/{sessionId}/finish` | Finish |
+| POST | `/api/v1/organizations/{organizationId}/live-sessions/{sessionId}/cancel` | Cancel |
+| GET | `/api/v1/live-sessions/preview?code=` | Public session preview |
+| POST | `/api/v1/live-sessions/join` | Guest join |
+| GET | `/api/v1/live-sessions/{sessionId}/state` | Participant reconnect state |
+| POST | `/api/v1/live-sessions/{sessionId}/answers` | Submit an answer |
+| WS | `/ws` | STOMP, topic `/topic/sessions/{sessionId}` |
 
-Invalid requests return 400 and missing tenant resources return 404 using ProblemDetail. Page size is capped at 100.
+Invalid requests return 400 and missing tenant resources return 404 using ProblemDetail. Page size is capped at 100. Guest join does not require an AssessFlow account.
 
 ## Quality checks
 
@@ -87,8 +105,8 @@ CI runs backend tests and frontend formatting, lint, tests and build checks on `
 - Phase 1 — Modern web foundation ✅
 - Phase 1.5 — AssessFlow product identity ✅
 - Phase 2 — Organizations, identity, multi-tenancy, Question Bank, Assessment Builder and branding ✅
-- Phase 3 — Live Sessions, WebSocket, join codes and QR Code
-- Phase 4 — Local Live Mode, resilience and offline capabilities
+- Phase 3 — Live Sessions, WebSocket, join codes and QR Code ✅
+- Phase 4 — Local Live Mode, Wi-Fi / hotspot, captive portal, LAN URL
 - Phase 5 — Redis, messaging, observability and production scaling
 
-Phase 3 and later are plans, not current capabilities. Live sessions, WebSocket, join codes, QR codes, Redis and RabbitMQ are not implemented.
+Phase 4 and later are plans. Live sessions run on a single instance: the STOMP simple broker does not fan out across processes. Redis, RabbitMQ, Kafka, Wi-Fi QR and captive portal are not implemented.

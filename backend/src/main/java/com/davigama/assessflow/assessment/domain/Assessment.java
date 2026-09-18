@@ -71,6 +71,7 @@ public class Assessment {
     }
 
     public void update(String title, String description, Instant now) {
+        requireNotArchived();
         this.title = title.trim();
         this.description = description;
         this.updatedAt = now;
@@ -99,6 +100,31 @@ public class Assessment {
         if (shuffleAnswers != null) this.shuffleAnswers = shuffleAnswers;
         if (showResultsAfterCompletion != null) this.showResultsAfterCompletion = showResultsAfterCompletion;
         this.updatedAt = now;
+    }
+
+    public void publish(Instant now) {
+        if (status != AssessmentStatus.DRAFT) {
+            throw new DomainException(HttpStatus.CONFLICT, "INVALID_ASSESSMENT_STATUS_TRANSITION",
+                    "Only draft assessments can be published.");
+        }
+        this.status = AssessmentStatus.PUBLISHED;
+        this.updatedAt = now;
+    }
+
+    public void archive(Instant now) {
+        if (status == AssessmentStatus.ARCHIVED) {
+            throw new DomainException(HttpStatus.CONFLICT, "INVALID_ASSESSMENT_STATUS_TRANSITION",
+                    "This assessment is already archived.");
+        }
+        this.status = AssessmentStatus.ARCHIVED;
+        this.updatedAt = now;
+    }
+
+    public void requireNotArchived() {
+        if (status == AssessmentStatus.ARCHIVED) {
+            throw new DomainException(HttpStatus.CONFLICT, "ASSESSMENT_ARCHIVED",
+                    "Archived assessments cannot be changed.");
+        }
     }
 
     public UUID getId() { return id; }

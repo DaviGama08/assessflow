@@ -1,5 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { assessmentsApi } from '../api/assessments'
+import { liveApi } from '../../live/api/live'
 import { questionsApi } from '../../questions/api/questions'
 import { AssessmentQuestionsPanel } from '../components/AssessmentQuestionsPanel'
 import type { Assessment, AssessmentQuestion } from '../types/assessment'
@@ -14,6 +16,7 @@ export function AssessmentBuilderPage({
   organizationId: string
   assessmentId: string
 }) {
+  const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('general')
   const [assessment, setAssessment] = useState<Assessment | null>(null)
   const [items, setItems] = useState<AssessmentQuestion[]>([])
@@ -54,6 +57,44 @@ export function AssessmentBuilderPage({
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reload is recreated each render
   }, [organizationId, assessmentId])
+
+  async function publish() {
+    setBusy(true)
+    setError('')
+    try {
+      await assessmentsApi.publish(organizationId, assessmentId)
+      await reload()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not publish assessment.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function archive() {
+    setBusy(true)
+    setError('')
+    try {
+      await assessmentsApi.archive(organizationId, assessmentId)
+      await reload()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not archive assessment.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function startLive() {
+    setBusy(true)
+    setError('')
+    try {
+      const session = await liveApi.create(organizationId, assessmentId)
+      navigate(`/app/organizations/${organizationId}/live-sessions/${session.id}`)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not start a live session.')
+      setBusy(false)
+    }
+  }
 
   async function save(event: FormEvent) {
     event.preventDefault()
@@ -139,7 +180,27 @@ export function AssessmentBuilderPage({
         <div>
           <p className="eyebrow">ASSESSMENT BUILDER</p>
           <h1>{assessment?.title ?? 'Assessment'}</h1>
-          <p>General details, question selection and delivery settings.</p>
+          <p>
+            Status: {assessment?.status ?? 'DRAFT'}. General details, question selection and
+            delivery settings.
+          </p>
+        </div>
+        <div className="inlineActions">
+          {assessment?.status === 'DRAFT' && (
+            <button disabled={busy} onClick={() => void publish()}>
+              Publish
+            </button>
+          )}
+          {assessment?.status === 'PUBLISHED' && (
+            <button disabled={busy} onClick={() => void startLive()}>
+              Start live session
+            </button>
+          )}
+          {assessment && assessment.status !== 'ARCHIVED' && (
+            <button className="buttonSecondary" disabled={busy} onClick={() => void archive()}>
+              Archive
+            </button>
+          )}
         </div>
       </div>
       {error && (

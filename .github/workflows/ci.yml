@@ -15,7 +15,7 @@ jobs:
           java-version: '25'
           cache: maven
           cache-dependency-path: backend/pom.xml
-      - run: ./mvnw test
+      - run: ./mvnw clean verify
         working-directory: backend
   frontend:
     runs-on: ubuntu-latest

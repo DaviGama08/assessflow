@@ -46,7 +46,15 @@ export const organizationsApi = {
       method: 'PATCH',
       body: JSON.stringify({ name }),
     }),
-  members: (id: string) => request<Member[]>(`/organizations/${id}/members`),
+  members: (id: string, page = 0, size = 20) =>
+    request<{
+      content: Member[]
+      number: number
+      totalPages: number
+      totalElements: number
+      first: boolean
+      last: boolean
+    }>(`/organizations/${id}/members?page=${page}&size=${size}`),
   addMember: (id: string, email: string, role: Role) =>
     request<Member>(`/organizations/${id}/members`, {
       method: 'POST',
