@@ -1,4 +1,4 @@
-# Phase 1 architecture
+# AssessFlow Phase 1 architecture
 
 The frontend is a React/TypeScript SPA built by Vite. Assessment views use a feature folder; HTTP calls go through a single shared wrapper and feature API module. The backend exposes versioned JSON REST endpoints. Its Assessment controller handles HTTP, the application service owns use cases and transactions, the domain entity owns state changes, and Spring Data JPA persists to PostgreSQL. DTO records keep JPA entities out of API responses.
 

@@ -1,6 +1,6 @@
-package com.davigama.distributedquiz.assessment.infrastructure;
+package com.davigama.assessflow.assessment.infrastructure;
 
-import com.davigama.distributedquiz.assessment.domain.Assessment;
+import com.davigama.assessflow.assessment.domain.Assessment;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 

@@ -1,4 +1,4 @@
-package com.davigama.distributedquiz.shared.exception;
+package com.davigama.assessflow.shared.exception;
 
 import java.util.UUID;
 

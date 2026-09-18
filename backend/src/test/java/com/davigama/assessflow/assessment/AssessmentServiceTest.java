@@ -1,4 +1,4 @@
-package com.davigama.distributedquiz.assessment;
+package com.davigama.assessflow.assessment;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -6,13 +6,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.davigama.distributedquiz.assessment.api.dto.CreateAssessmentRequest;
-import com.davigama.distributedquiz.assessment.api.dto.UpdateAssessmentRequest;
-import com.davigama.distributedquiz.assessment.application.AssessmentService;
-import com.davigama.distributedquiz.assessment.domain.Assessment;
-import com.davigama.distributedquiz.assessment.domain.AssessmentStatus;
-import com.davigama.distributedquiz.assessment.infrastructure.AssessmentRepository;
-import com.davigama.distributedquiz.shared.exception.AssessmentNotFoundException;
+import com.davigama.assessflow.assessment.api.dto.CreateAssessmentRequest;
+import com.davigama.assessflow.assessment.api.dto.UpdateAssessmentRequest;
+import com.davigama.assessflow.assessment.application.AssessmentService;
+import com.davigama.assessflow.assessment.domain.Assessment;
+import com.davigama.assessflow.assessment.domain.AssessmentStatus;
+import com.davigama.assessflow.assessment.infrastructure.AssessmentRepository;
+import com.davigama.assessflow.shared.exception.AssessmentNotFoundException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;

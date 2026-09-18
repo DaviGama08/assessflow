@@ -1,6 +1,6 @@
-package com.davigama.distributedquiz.shared.api.error;
+package com.davigama.assessflow.shared.api.error;
 
-import com.davigama.distributedquiz.shared.exception.AssessmentNotFoundException;
+import com.davigama.assessflow.shared.exception.AssessmentNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;

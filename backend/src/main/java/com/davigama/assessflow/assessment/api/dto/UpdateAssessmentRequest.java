@@ -1,4 +1,4 @@
-package com.davigama.distributedquiz.assessment.api.dto;
+package com.davigama.assessflow.assessment.api.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

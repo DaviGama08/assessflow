@@ -2,8 +2,8 @@ services:
   postgres:
     image: postgres:17.6-alpine
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-distributed_quiz}
-      POSTGRES_USER: ${POSTGRES_USER:-quiz_local}
+      POSTGRES_DB: ${POSTGRES_DB:-assessflow}
+      POSTGRES_USER: ${POSTGRES_USER:-assessflow_local}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local_only_change_me}
     ports:
       - "127.0.0.1:${POSTGRES_PORT:-55432}:5432"

@@ -85,9 +85,9 @@ export function AssessmentsPage() {
     <div className={styles.shell}>
       <aside className={styles.sidebar}>
         <div className={styles.brand}>
-          <span className={styles.mark}>DQ</span>
+          <span className={styles.mark}>AF</span>
           <span>
-            Distributed Quiz<small>ASSESSMENT PLATFORM</small>
+            AssessFlow<small>ASSESSMENT PLATFORM</small>
           </span>
         </div>
         <div className={styles.navLabel}>WORKSPACE</div>

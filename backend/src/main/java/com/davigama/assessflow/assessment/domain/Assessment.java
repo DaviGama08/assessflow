@@ -1,4 +1,4 @@
-package com.davigama.distributedquiz.assessment.domain;
+package com.davigama.assessflow.assessment.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

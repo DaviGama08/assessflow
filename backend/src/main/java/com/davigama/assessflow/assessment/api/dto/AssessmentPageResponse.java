@@ -1,4 +1,4 @@
-package com.davigama.distributedquiz.assessment.api.dto;
+package com.davigama.assessflow.assessment.api.dto;
 
 import java.util.List;
 import org.springframework.data.domain.Page;

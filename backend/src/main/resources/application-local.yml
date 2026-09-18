@@ -1,1 +1,8 @@
-# Local defaults are defined in application.yml and can be overridden with environment variables.
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:55432/assessflow}
+    username: ${DB_USERNAME:assessflow_local}
+    password: ${DB_PASSWORD:local_only_change_me}
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
