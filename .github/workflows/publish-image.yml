@@ -33,7 +33,7 @@ jobs:
           echo "image=${image}" >> "$GITHUB_OUTPUT"
           echo "sha=${sha}" >> "$GITHUB_OUTPUT"
           echo "tags=${image}:${sha}" >> "$GITHUB_OUTPUT"
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         id: push
         with:
           context: backend
