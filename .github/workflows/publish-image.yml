@@ -43,18 +43,18 @@ jobs:
             REVISION=${{ steps.meta.outputs.sha }}
             SOURCE=https://github.com/${{ github.repository }}
           provenance: true
-      - uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: ${{ steps.meta.outputs.tags }}
-          format: table
-          exit-code: '1'
-          severity: CRITICAL
-          ignore-unfixed: true
-      - uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: ${{ steps.meta.outputs.tags }}
-          format: cyclonedx
-          output: sbom.cdx.json
+      - name: Pull image for scan
+        run: docker pull ${{ steps.meta.outputs.tags }}
+      - name: Trivy CRITICAL
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.67.2 image --exit-code 1 --severity CRITICAL --ignore-unfixed \
+            ${{ steps.meta.outputs.tags }}
+      - name: CycloneDX SBOM
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/out" \
+            aquasec/trivy:0.67.2 image --format cyclonedx --output /out/sbom.cdx.json \
+            ${{ steps.meta.outputs.tags }}
       - uses: actions/upload-artifact@v4
         with:
           name: assessflow-backend-sbom
