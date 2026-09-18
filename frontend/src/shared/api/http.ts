@@ -1,7 +1,12 @@
 import { API_BASE_URL } from '../../config/env'
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) { super(message) }
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message)
+  }
 }
 
 export async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -15,8 +20,8 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
     throw new ApiError(0, 'Could not connect to the API. Check that the backend is running.')
   }
   if (!response.ok) {
-    const problem = await response.json().catch(() => null) as { detail?: string } | null
+    const problem = (await response.json().catch(() => null)) as { detail?: string } | null
     throw new ApiError(response.status, problem?.detail ?? `Request failed (${response.status})`)
   }
-  return response.status === 204 ? undefined as T : response.json() as Promise<T>
+  return response.status === 204 ? (undefined as T) : (response.json() as Promise<T>)
 }

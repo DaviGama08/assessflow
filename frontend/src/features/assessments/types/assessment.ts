@@ -8,4 +8,11 @@ export type Assessment = {
   updatedAt: string
 }
 export type AssessmentInput = { title: string; description: string }
-export type Page<T> = { content: T[]; totalPages: number; totalElements: number; number: number; last: boolean; first: boolean }
+export type Page<T> = {
+  content: T[]
+  totalPages: number
+  totalElements: number
+  number: number
+  last: boolean
+  first: boolean
+}

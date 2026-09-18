@@ -46,7 +46,7 @@ Invalid requests return 400 and missing assessments return 404 using ProblemDeta
 
 ```bash
 cd backend && ./mvnw clean verify
-cd frontend && npm ci && npm run lint && npm run build
+cd frontend && npm ci && npm run format:check && npm run lint && npm run build
 # From the root:
 docker compose config
 ```
