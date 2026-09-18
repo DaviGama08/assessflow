@@ -18,6 +18,15 @@
 body {
   margin: 0;
 }
+.sessionBar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  background: #fff;
+  border-bottom: 1px solid #dce2ed;
+}
 button {
   font: inherit;
   cursor: pointer;
