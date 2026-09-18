@@ -2,6 +2,7 @@ package com.davigama.assessflow.shared.api.error;
 
 import com.davigama.assessflow.shared.exception.AssessmentNotFoundException;
 import com.davigama.assessflow.identity.application.AuthException;
+import com.davigama.assessflow.organization.application.OrganizationException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
@@ -16,6 +17,11 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    @ExceptionHandler(OrganizationException.class)
+    ResponseEntity<ProblemDetail> organization(OrganizationException exception, HttpServletRequest request) {
+        return problem(exception.getStatus(), exception.getStatus().getReasonPhrase(),
+                exception.getMessage(), exception.getCode(), request);
+    }
     @ExceptionHandler(AuthException.class)
     ResponseEntity<ProblemDetail> auth(AuthException exception, HttpServletRequest request) {
         HttpStatus status = switch (exception.getCode()) {
