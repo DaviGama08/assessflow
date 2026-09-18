@@ -90,6 +90,19 @@ export function ParticipantPlayPage() {
       <header>
         <strong>{state.sessionName}</strong>
         <small>{connection}</small>
+        {token && state.status !== 'FINISHED' && state.status !== 'CANCELLED' && (
+          <button
+            className="buttonSecondary"
+            onClick={() => {
+              void liveApi.leave(sessionId, token).finally(() => {
+                sessionStorage.removeItem(`af-live-${sessionId}`)
+                window.location.assign('/join')
+              })
+            }}
+          >
+            Leave
+          </button>
+        )}
       </header>
       {error && <p role="alert">{error}</p>}
       {state.status === 'WAITING' && (

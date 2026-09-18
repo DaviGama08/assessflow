@@ -3,6 +3,7 @@ package com.davigama.assessflow.livesession.domain;
 public enum LiveEventType {
     PARTICIPANT_JOINED,
     PARTICIPANT_LEFT,
+    PRESENCE_CHANGED,
     SESSION_STARTED,
     QUESTION_STARTED,
     ANSWER_RECEIVED,

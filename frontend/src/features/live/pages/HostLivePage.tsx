@@ -41,7 +41,12 @@ export function HostLivePage() {
 
   const onEvent = useCallback(
     (event: LiveSocketEvent) => {
-      if (event.type === 'PARTICIPANT_JOINED') void reload()
+      if (
+        event.type === 'PARTICIPANT_JOINED' ||
+        event.type === 'PARTICIPANT_LEFT' ||
+        event.type === 'PRESENCE_CHANGED'
+      )
+        void reload()
       if (event.type === 'QUESTION_STARTED') {
         setQuestion(event.payload as PublicQuestion)
         setResults(null)
@@ -65,7 +70,7 @@ export function HostLivePage() {
     },
     [organizationId, reload, sessionId],
   )
-  const connection = useLiveEvents(sessionId, token, onEvent)
+  const connection = useLiveEvents(sessionId, token, onEvent, 'host')
 
   useEffect(() => {
     reload().catch((cause) =>

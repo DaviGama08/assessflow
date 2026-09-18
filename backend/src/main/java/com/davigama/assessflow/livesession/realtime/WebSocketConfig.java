@@ -7,6 +7,7 @@ import com.davigama.assessflow.livesession.application.ParticipantPrincipal;
 import com.davigama.assessflow.livesession.infrastructure.LiveSessionRepository;
 import com.davigama.assessflow.organization.application.OrganizationAccess;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -28,18 +29,24 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final ParticipantAuthService participants;
     private final LiveSessionRepository sessions;
     private final OrganizationAccess access;
+    private final String[] allowedOrigins;
 
     public WebSocketConfig(AuthService auth, ParticipantAuthService participants, LiveSessionRepository sessions,
-                           OrganizationAccess access) {
+                           OrganizationAccess access,
+                           @Value("${app.ws.allowed-origins:}") String wsOrigins,
+                           @Value("${app.cors.allowed-origins}") String corsOrigins) {
         this.auth = auth;
         this.participants = participants;
         this.sessions = sessions;
         this.access = access;
+        String raw = wsOrigins == null || wsOrigins.isBlank() ? corsOrigins : wsOrigins;
+        this.allowedOrigins = java.util.Arrays.stream(raw.split(",")).map(String::trim).filter(s -> !s.isBlank())
+                .toArray(String[]::new);
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws").setAllowedOriginPatterns("*");
+        registry.addEndpoint("/ws").setAllowedOrigins(allowedOrigins);
     }
 
     @Override
@@ -62,10 +69,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         auth.authenticate(raw).ifPresent(user -> accessor.setUser(
                                 new UsernamePasswordAuthenticationToken(user, null, java.util.List.of())));
                         if (accessor.getUser() == null) {
-                            ParticipantPrincipal participant = participants.authenticate(raw);
-                            if (participant != null) {
-                                accessor.setUser(new UsernamePasswordAuthenticationToken(
-                                        participant, null, java.util.List.of()));
+                            try {
+                                ParticipantPrincipal participant = participants.authenticate(raw);
+                                if (participant != null) {
+                                    accessor.setUser(new UsernamePasswordAuthenticationToken(
+                                            participant, null, java.util.List.of()));
+                                }
+                            } catch (RuntimeException ex) {
+                                throw new IllegalArgumentException("Unauthorized websocket");
                             }
                         }
                     }
@@ -74,29 +85,46 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     }
                 }
                 if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
-                    String destination = accessor.getDestination();
-                    if (destination == null || !destination.startsWith("/topic/sessions/")) {
-                        throw new IllegalArgumentException("Invalid destination");
-                    }
-                    UUID sessionId = UUID.fromString(destination.substring("/topic/sessions/".length()).split("/")[0]);
-                    var principal = accessor.getUser();
-                    if (!(principal instanceof UsernamePasswordAuthenticationToken token)) {
-                        throw new IllegalArgumentException("Forbidden destination");
-                    }
-                    if (token.getPrincipal() instanceof User user) {
-                        var session = sessions.findById(sessionId)
-                                .orElseThrow(() -> new IllegalArgumentException("Unknown session"));
-                        access.requireInstructor(session.getOrganizationId(), user.getId());
-                    } else if (token.getPrincipal() instanceof ParticipantPrincipal participant) {
-                        if (!participant.sessionId().equals(sessionId)) {
-                            throw new IllegalArgumentException("Forbidden destination");
-                        }
-                    } else {
-                        throw new IllegalArgumentException("Forbidden destination");
-                    }
+                    authorizeSubscribe(accessor);
                 }
                 return message;
             }
         });
+    }
+
+    private void authorizeSubscribe(StompHeaderAccessor accessor) {
+        String destination = accessor.getDestination();
+        boolean hostTopic = destination != null && destination.startsWith("/topic/host/sessions/");
+        boolean participantTopic = destination != null && destination.startsWith("/topic/sessions/");
+        if (!hostTopic && !participantTopic) {
+            throw new IllegalArgumentException("Invalid destination");
+        }
+        String prefix = hostTopic ? "/topic/host/sessions/" : "/topic/sessions/";
+        UUID sessionId;
+        try {
+            sessionId = UUID.fromString(destination.substring(prefix.length()).split("/")[0]);
+        } catch (RuntimeException ex) {
+            throw new IllegalArgumentException("Invalid destination");
+        }
+        var principal = accessor.getUser();
+        if (!(principal instanceof UsernamePasswordAuthenticationToken token)) {
+            throw new IllegalArgumentException("Forbidden destination");
+        }
+        if (token.getPrincipal() instanceof User user) {
+            var session = sessions.findById(sessionId).orElseThrow(() -> new IllegalArgumentException("Unknown session"));
+            try {
+                access.requireInstructor(session.getOrganizationId(), user.getId());
+            } catch (RuntimeException ex) {
+                throw new IllegalArgumentException("Forbidden destination");
+            }
+            return;
+        }
+        if (token.getPrincipal() instanceof ParticipantPrincipal participant) {
+            if (hostTopic || !participant.sessionId().equals(sessionId)) {
+                throw new IllegalArgumentException("Forbidden destination");
+            }
+            return;
+        }
+        throw new IllegalArgumentException("Forbidden destination");
     }
 }

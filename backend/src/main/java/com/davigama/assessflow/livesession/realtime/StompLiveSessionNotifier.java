@@ -14,7 +14,12 @@ public class StompLiveSessionNotifier implements LiveSessionNotifier {
     }
 
     @Override
-    public void publish(UUID sessionId, LiveEvent event) {
+    public void toParticipants(UUID sessionId, LiveEvent event) {
         messaging.convertAndSend("/topic/sessions/" + sessionId, event);
+    }
+
+    @Override
+    public void toHost(UUID sessionId, LiveEvent event) {
+        messaging.convertAndSend("/topic/host/sessions/" + sessionId, event);
     }
 }

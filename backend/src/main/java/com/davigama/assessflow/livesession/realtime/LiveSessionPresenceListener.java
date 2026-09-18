@@ -19,15 +19,23 @@ public class LiveSessionPresenceListener {
 
     @EventListener
     public void connected(SessionConnectedEvent event) {
-        participant(event.getUser()).ifPresent(principal -> liveSessions.markConnected(principal.participantId()));
+        try {
+            participant(event.getUser()).ifPresent(principal -> liveSessions.markConnected(principal.participantId()));
+        } catch (RuntimeException ignored) {
+            // shutdown or missing session
+        }
     }
 
     @EventListener
     public void disconnected(SessionDisconnectEvent event) {
-        participant(event.getUser()).ifPresent(principal -> liveSessions.markDisconnected(principal.participantId()));
-        if (event.getUser() == null) {
-            StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
-            participant(accessor.getUser()).ifPresent(principal -> liveSessions.markDisconnected(principal.participantId()));
+        try {
+            participant(event.getUser()).ifPresent(principal -> liveSessions.markDisconnected(principal.participantId()));
+            if (event.getUser() == null) {
+                StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
+                participant(accessor.getUser()).ifPresent(principal -> liveSessions.markDisconnected(principal.participantId()));
+            }
+        } catch (RuntimeException ignored) {
+            // shutdown or missing session
         }
     }
 
