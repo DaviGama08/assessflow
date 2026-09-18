@@ -1,6 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import type { User } from '../../auth/api/auth'
 import { organizationsApi, type Member, type Organization, type Role } from '../api/organizations'
+import { navigate } from '../../../shared/navigation'
+import { canManageMembers } from '../../../shared/permissions'
 import './organizations.css'
 
 function errorText(cause: unknown) {
@@ -29,7 +31,7 @@ export function OrganizationSelectorPage() {
     setError('')
     try {
       const organization = await organizationsApi.create(name, slug)
-      window.location.assign(`/app/organizations/${organization.id}`)
+      navigate(`/app/organizations/${organization.id}`)
     } catch (cause) {
       setError(errorText(cause))
       setBusy(false)
@@ -45,7 +47,6 @@ export function OrganizationSelectorPage() {
             <h1>Organizations</h1>
             <p>Choose a workspace or create one to get started.</p>
           </div>
-          <a href="/app/assessments">Assessments</a>
         </div>
         {error && (
           <p className="orgError" role="alert">
@@ -61,6 +62,10 @@ export function OrganizationSelectorPage() {
                 className="orgCard"
                 href={`/app/organizations/${organization.id}`}
                 key={organization.id}
+                onClick={(event) => {
+                  event.preventDefault()
+                  navigate(`/app/organizations/${organization.id}`)
+                }}
               >
                 <strong>{organization.name}</strong>
                 <span>{organization.slug}</span>
@@ -104,50 +109,6 @@ export function OrganizationSelectorPage() {
   )
 }
 
-export function OrganizationPage({ id }: { id: string }) {
-  const [organization, setOrganization] = useState<Organization | null>(null)
-  const [error, setError] = useState('')
-  useEffect(() => {
-    organizationsApi
-      .get(id)
-      .then(setOrganization)
-      .catch((cause) => setError(errorText(cause)))
-  }, [id])
-  return (
-    <main className="orgPage">
-      <div className="orgContainer">
-        <a href="/app">← Organizations</a>
-        {error && (
-          <p className="orgError" role="alert">
-            {error}
-          </p>
-        )}
-        {organization ? (
-          <>
-            <div className="orgHeading">
-              <div>
-                <p className="orgEyebrow">WORKSPACE</p>
-                <h1>{organization.name}</h1>
-                <p>
-                  {organization.slug} · {organization.status}
-                </p>
-              </div>
-            </div>
-            <section className="orgGrid">
-              <a className="orgCard" href={`/app/organizations/${id}/members`}>
-                <strong>Members</strong>
-                <span>View people and manage access</span>
-              </a>
-            </section>
-          </>
-        ) : (
-          !error && <p>Loading organization…</p>
-        )}
-      </div>
-    </main>
-  )
-}
-
 export function MembersPage({ id, user }: { id: string; user: User }) {
   const [organization, setOrganization] = useState<Organization | null>(null)
   const [members, setMembers] = useState<Member[]>([])
@@ -158,7 +119,7 @@ export function MembersPage({ id, user }: { id: string; user: User }) {
   const [busy, setBusy] = useState(false)
   const currentRole = members.find((member) => member.userId === user.id)?.role
   const ownerCount = members.filter((member) => member.role === 'OWNER').length
-  const manager = currentRole === 'OWNER' || currentRole === 'ADMIN'
+  const manager = canManageMembers(currentRole)
   const roles: Role[] =
     currentRole === 'OWNER'
       ? ['OWNER', 'ADMIN', 'INSTRUCTOR', 'PARTICIPANT']
@@ -218,101 +179,98 @@ export function MembersPage({ id, user }: { id: string; user: User }) {
   }
 
   return (
-    <main className="orgPage">
-      <div className="orgContainer">
-        <a href={`/app/organizations/${id}`}>← {organization?.name ?? 'Organization'}</a>
-        <div className="orgHeading">
-          <div>
-            <p className="orgEyebrow">WORKSPACE</p>
-            <h1>Members</h1>
-            <p>{organization?.name}</p>
-          </div>
+    <>
+      <div className="workspaceHeading">
+        <div>
+          <p className="eyebrow">WORKSPACE</p>
+          <h1>Members</h1>
+          <p>{organization?.name}</p>
         </div>
-        {error && (
-          <p className="orgError" role="alert">
-            {error}
-          </p>
-        )}
-        {loading ? (
-          <p>Loading members…</p>
-        ) : (
-          <>
-            <section className="orgPanel">
-              <h2>People</h2>
-              <div className="memberList">
-                {members.map((member) => {
-                  const lastOwner = member.role === 'OWNER' && ownerCount === 1
-                  const canManage =
-                    manager && !lastOwner && (currentRole === 'OWNER' || member.role !== 'OWNER')
-                  return (
-                    <div className="memberRow" key={member.id}>
-                      <div>
-                        <strong>{member.displayName}</strong>
-                        <small>{member.email}</small>
-                      </div>
-                      {canManage ? (
-                        <>
-                          <select
-                            aria-label={`Role for ${member.email}`}
-                            disabled={busy}
-                            value={member.role}
-                            onChange={(event) => void change(member, event.target.value as Role)}
-                          >
-                            {roles.map((choice) => (
-                              <option key={choice} value={choice}>
-                                {choice}
-                              </option>
-                            ))}
-                          </select>
-                          <button
-                            className="buttonDanger"
-                            disabled={busy}
-                            onClick={() => void remove(member)}
-                          >
-                            Remove
-                          </button>
-                        </>
-                      ) : (
-                        <span>{lastOwner ? 'OWNER · last owner' : member.role}</span>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
-            {manager && (
-              <section className="orgPanel">
-                <h2>Add a member</h2>
-                <p>Enter the email of an existing AssessFlow user.</p>
-                <form className="orgForm" onSubmit={add}>
-                  <label>
-                    Email
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                    />
-                  </label>
-                  <label>
-                    Role
-                    <select value={role} onChange={(event) => setRole(event.target.value as Role)}>
-                      {roles.map((choice) => (
-                        <option key={choice} value={choice}>
-                          {choice}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <button type="submit" disabled={busy}>
-                    Add member
-                  </button>
-                </form>
-              </section>
-            )}
-          </>
-        )}
       </div>
-    </main>
+      {error && (
+        <p className="orgError" role="alert">
+          {error}
+        </p>
+      )}
+      {loading ? (
+        <p>Loading members…</p>
+      ) : (
+        <>
+          <section className="orgPanel">
+            <h2>People</h2>
+            <div className="memberList">
+              {members.map((member) => {
+                const lastOwner = member.role === 'OWNER' && ownerCount === 1
+                const canManage =
+                  manager && !lastOwner && (currentRole === 'OWNER' || member.role !== 'OWNER')
+                return (
+                  <div className="memberRow" key={member.id}>
+                    <div>
+                      <strong>{member.displayName}</strong>
+                      <small>{member.email}</small>
+                    </div>
+                    {canManage ? (
+                      <>
+                        <select
+                          aria-label={`Role for ${member.email}`}
+                          disabled={busy}
+                          value={member.role}
+                          onChange={(event) => void change(member, event.target.value as Role)}
+                        >
+                          {roles.map((choice) => (
+                            <option key={choice} value={choice}>
+                              {choice}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          className="buttonDanger"
+                          disabled={busy}
+                          onClick={() => void remove(member)}
+                        >
+                          Remove
+                        </button>
+                      </>
+                    ) : (
+                      <span>{lastOwner ? 'OWNER · last owner' : member.role}</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+          {manager && (
+            <section className="orgPanel">
+              <h2>Add a member</h2>
+              <p>Enter the email of an existing AssessFlow user.</p>
+              <form className="orgForm" onSubmit={add}>
+                <label>
+                  Email
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                  />
+                </label>
+                <label>
+                  Role
+                  <select value={role} onChange={(event) => setRole(event.target.value as Role)}>
+                    {roles.map((choice) => (
+                      <option key={choice} value={choice}>
+                        {choice}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button type="submit" disabled={busy}>
+                  Add member
+                </button>
+              </form>
+            </section>
+          )}
+        </>
+      )}
+    </>
   )
 }
