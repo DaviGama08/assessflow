@@ -1,0 +1,33 @@
+name: Deploy backend
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Full GHCR tag ghcr.io/<owner>/assessflow-backend:<git-sha>
+        required: true
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: production-backend
+  cancel-in-progress: false
+jobs:
+  azure:
+    if: vars.AZURE_CONTAINER_APP_NAME != ''
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Deploy known SHA image
+        env:
+          APP: ${{ vars.AZURE_CONTAINER_APP_NAME }}
+          RG: ${{ vars.AZURE_RESOURCE_GROUP }}
+          IMAGE: ${{ github.event.inputs.image_tag }}
+        run: |
+          set -euo pipefail
+          az containerapp update --name "$APP" --resource-group "$RG" --image "$IMAGE"
+          az containerapp revision list --name "$APP" --resource-group "$RG" -o table
