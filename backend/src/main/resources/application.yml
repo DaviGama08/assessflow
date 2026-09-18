@@ -9,6 +9,9 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+app:
+  auth:
+    secure-cookie: true
 management:
   endpoints:
     web:

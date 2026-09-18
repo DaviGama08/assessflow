@@ -4,5 +4,7 @@ spring:
     username: ${DB_USERNAME:assessflow_local}
     password: ${DB_PASSWORD:local_only_change_me}
 app:
+  auth:
+    secure-cookie: ${APP_AUTH_SECURE_COOKIE:false}
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}

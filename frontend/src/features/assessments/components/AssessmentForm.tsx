@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from 'react'
-import type { AssessmentInput } from '../types/assessment'
+type AssessmentFormInput = { title: string; description: string }
 import styles from './AssessmentForm.module.css'
 
 type Props = {
-  initial?: AssessmentInput
+  initial?: AssessmentFormInput
   submitLabel: string
   busy: boolean
-  onSubmit: (input: AssessmentInput) => Promise<void>
+  onSubmit: (input: AssessmentFormInput) => Promise<void>
   onCancel: () => void
 }
 

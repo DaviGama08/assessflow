@@ -5,55 +5,96 @@ import com.davigama.assessflow.assessment.api.dto.CreateAssessmentRequest;
 import com.davigama.assessflow.assessment.api.dto.UpdateAssessmentRequest;
 import com.davigama.assessflow.assessment.domain.Assessment;
 import com.davigama.assessflow.assessment.infrastructure.AssessmentRepository;
+import com.davigama.assessflow.identity.domain.User;
+import com.davigama.assessflow.organization.application.OrganizationAccess;
+import com.davigama.assessflow.organization.application.OrganizationException;
+import com.davigama.assessflow.organization.infrastructure.OrganizationRepository;
 import com.davigama.assessflow.shared.exception.AssessmentNotFoundException;
 import java.time.Clock;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AssessmentService {
     private final AssessmentRepository repository;
+    private final OrganizationRepository organizations;
+    private final OrganizationAccess access;
     private final Clock clock;
 
-    public AssessmentService(AssessmentRepository repository, Clock clock) {
+    public AssessmentService(AssessmentRepository repository, OrganizationRepository organizations,
+                             OrganizationAccess access, Clock clock) {
         this.repository = repository;
+        this.organizations = organizations;
+        this.access = access;
         this.clock = clock;
     }
 
     @Transactional
-    public AssessmentResponse create(CreateAssessmentRequest request) {
-        return AssessmentResponse.from(repository.save(new Assessment(request.title(), request.description(), clock.instant())));
+    public AssessmentResponse create(User actor, UUID organizationId, CreateAssessmentRequest request) {
+        requireOrganization(organizationId);
+        access.requireInstructor(organizationId, actor.getId());
+        Assessment assessment = new Assessment(organizationId, request.title(), request.description(), clock.instant());
+        assessment.configure(request.timeLimitMinutes(), request.maxAttempts(), request.passingScore(),
+                request.shuffleQuestions(), request.shuffleAnswers(), request.showResultsAfterCompletion(),
+                clock.instant());
+        return AssessmentResponse.from(repository.save(assessment));
     }
 
     @Transactional(readOnly = true)
-    public Page<AssessmentResponse> list(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id")));
-        return repository.findAll(pageable).map(AssessmentResponse::from);
+    public Page<AssessmentResponse> list(User actor, UUID organizationId, int page, int size) {
+        requireOrganization(organizationId);
+        access.requireInstructor(organizationId, actor.getId());
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id")));
+        return repository.findByOrganizationId(organizationId, pageable).map(AssessmentResponse::from);
     }
 
     @Transactional(readOnly = true)
-    public AssessmentResponse get(UUID id) {
-        return AssessmentResponse.from(find(id));
+    public AssessmentResponse get(User actor, UUID organizationId, UUID assessmentId) {
+        requireOrganization(organizationId);
+        access.requireInstructor(organizationId, actor.getId());
+        return AssessmentResponse.from(find(organizationId, assessmentId));
     }
 
     @Transactional
-    public AssessmentResponse update(UUID id, UpdateAssessmentRequest request) {
-        Assessment assessment = find(id);
+    public AssessmentResponse update(User actor, UUID organizationId, UUID assessmentId,
+                                     UpdateAssessmentRequest request) {
+        requireOrganization(organizationId);
+        access.requireInstructor(organizationId, actor.getId());
+        Assessment assessment = find(organizationId, assessmentId);
         assessment.update(request.title(), request.description(), clock.instant());
+        assessment.configure(request.timeLimitMinutes(), request.maxAttempts(), request.passingScore(),
+                request.shuffleQuestions(), request.shuffleAnswers(), request.showResultsAfterCompletion(),
+                clock.instant());
         return AssessmentResponse.from(assessment);
     }
 
     @Transactional
-    public void delete(UUID id) {
-        repository.delete(find(id));
+    public void delete(User actor, UUID organizationId, UUID assessmentId) {
+        requireOrganization(organizationId);
+        access.requireInstructor(organizationId, actor.getId());
+        repository.delete(find(organizationId, assessmentId));
     }
 
-    private Assessment find(UUID id) {
-        return repository.findById(id).orElseThrow(() -> new AssessmentNotFoundException(id));
+    Assessment requireOwned(UUID organizationId, UUID assessmentId) {
+        return find(organizationId, assessmentId);
+    }
+
+    void requireOrganization(UUID organizationId) {
+        if (!organizations.existsById(organizationId)) {
+            throw new OrganizationException(HttpStatus.NOT_FOUND, "ORGANIZATION_NOT_FOUND",
+                    "Organization not found.");
+        }
+    }
+
+    private Assessment find(UUID organizationId, UUID assessmentId) {
+        return repository.findByIdAndOrganizationId(assessmentId, organizationId)
+                .orElseThrow(() -> new AssessmentNotFoundException(assessmentId));
     }
 }

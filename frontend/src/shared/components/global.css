@@ -1,4 +1,6 @@
 :root {
+  --af-primary: #5369e8;
+  --af-secondary: #101e32;
   font-family:
     Inter,
     ui-sans-serif,
@@ -18,6 +20,15 @@
 body {
   margin: 0;
 }
+.sessionBar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  background: #fff;
+  border-bottom: 1px solid #dce2ed;
+}
 button {
   font: inherit;
   cursor: pointer;
@@ -27,9 +38,9 @@ button:disabled {
   cursor: not-allowed;
 }
 button:not(.buttonSecondary, .buttonDanger):not(.titleButton, .arrow, .back) {
-  background: #5369e8;
+  background: var(--af-primary, #5369e8);
   color: #fff;
-  border: 1px solid #5369e8;
+  border: 1px solid var(--af-primary, #5369e8);
   border-radius: 10px;
   padding: 0.78rem 1.1rem;
   font-weight: 700;
@@ -54,6 +65,10 @@ button:not(.buttonSecondary, .buttonDanger, .titleButton, .arrow, .back):hover {
   padding: 0.76rem 1rem;
   font-weight: 650;
 }
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
 button:focus-visible {
   outline: 3px solid #9db4ff;
   outline-offset: 2px;
