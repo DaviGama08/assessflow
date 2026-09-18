@@ -6,6 +6,10 @@ spring:
 app:
   auth:
     secure-cookie: ${APP_AUTH_SECURE_COOKIE:false}
+    refresh-cookie:
+      same-site: Strict
+  api-docs:
+    enabled: true
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
   realtime:

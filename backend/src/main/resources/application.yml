@@ -1,7 +1,7 @@
 server:
   shutdown: graceful
-  # Do not trust X-Forwarded-For from arbitrary clients. Set framework/native only
-  # behind a reverse proxy that overwrites forwarded headers, and set APP_HTTP_TRUSTED_PROXY=true.
+  # Do not trust client-supplied forwarded headers. Use app.http.proxy-mode=forwarded|cloudflare
+  # only when the origin cannot be reached except through the configured edge.
   forward-headers-strategy: ${SERVER_FORWARD_HEADERS_STRATEGY:none}
 spring:
   application:
@@ -22,7 +22,9 @@ spring:
     enabled: true
 app:
   auth:
-    secure-cookie: true
+    secure-cookie: ${APP_AUTH_SECURE_COOKIE:true}
+    refresh-cookie:
+      same-site: ${APP_AUTH_REFRESH_COOKIE_SAME_SITE:Strict}
   live:
     participant-token-ttl: ${APP_LIVE_PARTICIPANT_TOKEN_TTL:12h}
   local-package:
@@ -32,18 +34,23 @@ app:
   realtime:
     broker-mode: ${APP_REALTIME_BROKER_MODE:simple}
     relay:
-      host: ${RABBITMQ_HOST:localhost}
+      host: ${RABBITMQ_HOST:}
       port: ${RABBITMQ_STOMP_PORT:61613}
       username: ${RABBITMQ_USERNAME:}
       password: ${RABBITMQ_PASSWORD:}
       virtual-host: ${RABBITMQ_VHOST:/}
   redis:
     enabled: ${APP_REDIS_ENABLED:false}
-    host: ${REDIS_HOST:localhost}
+    host: ${REDIS_HOST:}
     port: ${REDIS_PORT:6379}
     password: ${REDIS_PASSWORD:}
   http:
+    proxy-mode: ${APP_HTTP_PROXY_MODE:none}
     trusted-proxy: ${APP_HTTP_TRUSTED_PROXY:false}
+  deploy:
+    replicas: ${APP_REPLICAS:1}
+  api-docs:
+    enabled: ${APP_API_DOCS_ENABLED:false}
   rate-limit:
     join-per-minute: ${APP_RATE_LIMIT_JOIN:30}
     preview-per-minute: ${APP_RATE_LIMIT_PREVIEW:60}
@@ -72,3 +79,8 @@ management:
     metrics:
       export:
         enabled: false
+springdoc:
+  api-docs:
+    enabled: ${app.api-docs.enabled:false}
+  swagger-ui:
+    enabled: ${app.api-docs.enabled:false}

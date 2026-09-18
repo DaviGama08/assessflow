@@ -60,8 +60,11 @@ Local Live Mode uses profile `local-live`: same-origin SPA + API + WebSocket, Po
 Multiple API processes share one PostgreSQL database. Redis is optional and used only for public rate limiting. RabbitMQ STOMP (port 61613) is the scaled message broker. `app.realtime.broker-mode=simple|relay` selects in-process STOMP vs relay; never both. Realtime events publish after the database transaction commits. See [ADR 0007](adr/0007-production-scaling.md).
 
 ```text
-Load balancer → AssessFlow API × N
-                    ├── PostgreSQL (source of truth)
-                    ├── Redis (public rate limit, fail-open)
-                    └── RabbitMQ STOMP relay
+Cloudflare → Pages (React) + API/WSS
+                Azure Container Apps
+                    ├── Neon PostgreSQL (source of truth)
+                    ├── Redis (public rate limit, optional, fail-open)
+                    └── RabbitMQ STOMP relay (optional)
 ```
+
+Cloud deployment: [deployment.md](deployment.md). Lean mode is one replica without Redis/RabbitMQ. Two or more replicas require relay + Redis.
