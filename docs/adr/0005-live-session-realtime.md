@@ -22,7 +22,7 @@ Phase 3 turns a published assessment into a live session. Instructors host from 
 
 **Reconnect.** Refreshing the participant page reloads state with the stored token and resubscribes. The host reloads REST state and resubscribes with the user access token.
 
-**Single-instance limitation.** The simple broker only notifies connections on the same process. Horizontal scale needs an external broker (documented for Phase 5). Local Live Mode (LAN URL, hotspot, captive portal) is not part of this decision.
+**Single-instance limitation.** The simple broker only notifies connections on the same process. Phase 5 adds an opt-in RabbitMQ STOMP relay (`app.realtime.broker-mode=relay`) while Local Live keeps the simple broker. See [ADR 0007](0007-production-scaling.md).
 
 ## Consequences
 

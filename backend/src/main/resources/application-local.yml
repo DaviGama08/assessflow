@@ -8,3 +8,7 @@ app:
     secure-cookie: ${APP_AUTH_SECURE_COOKIE:false}
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  realtime:
+    broker-mode: simple
+  redis:
+    enabled: false

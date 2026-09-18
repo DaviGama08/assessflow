@@ -37,7 +37,15 @@ if ! command -v nmcli >/dev/null 2>&1; then
 fi
 
 CONN="assessflow-hotspot"
+WIFI_IFACE="${WIFI_IFACE:-}"
+if [[ -z "${WIFI_IFACE}" ]]; then
+  WIFI_IFACE="$(nmcli -t -f DEVICE,TYPE device status 2>/dev/null | awk -F: '$2=="wifi"{print $1; exit}')"
+fi
+if [[ -z "${WIFI_IFACE}" ]]; then
+  echo "No Wi-Fi interface found. Set WIFI_IFACE or connect a wireless adapter." >&2
+  exit 1
+fi
 nmcli connection delete "$CONN" >/dev/null 2>&1 || true
-nmcli device wifi hotspot ifname wlan0 con-name "$CONN" ssid "$SSID" password "$PASSWORD"
+nmcli device wifi hotspot ifname "$WIFI_IFACE" con-name "$CONN" ssid "$SSID" password "$PASSWORD"
 echo "$CONN" >"${STATE_DIR}/connection"
 echo "started $SSID"

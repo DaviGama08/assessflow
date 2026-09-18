@@ -6,6 +6,7 @@ import com.davigama.assessflow.livesession.application.ParticipantAuthService;
 import com.davigama.assessflow.livesession.application.ParticipantPrincipal;
 import com.davigama.assessflow.livesession.infrastructure.LiveSessionRepository;
 import com.davigama.assessflow.organization.application.OrganizationAccess;
+import com.davigama.assessflow.shared.config.RealtimeSettings;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -31,9 +32,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final OrganizationAccess access;
     private final String[] allowedOrigins;
     private final boolean allowPrivateLan;
+    private final RealtimeSettings realtime;
 
     public WebSocketConfig(AuthService auth, ParticipantAuthService participants, LiveSessionRepository sessions,
-                           OrganizationAccess access,
+                           OrganizationAccess access, RealtimeSettings realtime,
                            @Value("${app.ws.allowed-origins:}") String wsOrigins,
                            @Value("${app.cors.allowed-origins}") String corsOrigins,
                            @Value("${app.ws.allow-private-lan:false}") boolean allowPrivateLan) {
@@ -41,6 +43,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         this.participants = participants;
         this.sessions = sessions;
         this.access = access;
+        this.realtime = realtime;
         this.allowPrivateLan = allowPrivateLan;
         String raw = wsOrigins == null || wsOrigins.isBlank() ? corsOrigins : wsOrigins;
         this.allowedOrigins = java.util.Arrays.stream(raw.split(",")).map(String::trim).filter(s -> !s.isBlank())
@@ -61,7 +64,18 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/topic");
+        if (realtime.relay()) {
+            registry.enableStompBrokerRelay("/topic", "/exchange")
+                    .setRelayHost(realtime.relayHost())
+                    .setRelayPort(realtime.relayPort())
+                    .setClientLogin(realtime.relayUsername())
+                    .setClientPasscode(realtime.relayPassword())
+                    .setSystemLogin(realtime.relayUsername())
+                    .setSystemPasscode(realtime.relayPassword())
+                    .setVirtualHost(realtime.relayVirtualHost());
+        } else {
+            registry.enableSimpleBroker("/topic");
+        }
         registry.setApplicationDestinationPrefixes("/app");
     }
 
@@ -96,6 +110,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 }
                 if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
                     authorizeSubscribe(accessor);
+                    if (realtime.relay()) {
+                        String rewritten = StompDestinations.forBroker(accessor.getDestination());
+                        if (rewritten != null) {
+                            accessor.setDestination(rewritten);
+                        }
+                    }
                 }
                 return message;
             }

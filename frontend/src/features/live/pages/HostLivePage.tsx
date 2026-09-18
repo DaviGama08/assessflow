@@ -124,7 +124,7 @@ export function HostLivePage() {
           <QrCode value={url} />
         </div>
         <p>{people.length} participants</p>
-        {(session.status === 'FINISHED' || session.status === 'CANCELLED') && (
+        {session.status === 'FINISHED' && (
           <button
             className="buttonSecondary"
             onClick={() => {

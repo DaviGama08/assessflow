@@ -1,0 +1,36 @@
+# Scaled cloud profile: multiple API instances, Redis rate limiting, RabbitMQ STOMP relay.
+# Local Live and local/test keep broker-mode=simple and app.redis.enabled=false.
+app:
+  realtime:
+    broker-mode: ${APP_REALTIME_BROKER_MODE:relay}
+  redis:
+    enabled: ${APP_REDIS_ENABLED:true}
+  auth:
+    secure-cookie: true
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      group:
+        readiness:
+          include: ping,readinessState,db,stompRelay
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  tracing:
+    enabled: ${OTEL_TRACES_ENABLED:false}
+    sampling:
+      probability: ${OTEL_TRACES_SAMPLER_ARG:0.1}
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:}
+logging:
+  structured:
+    format:
+      console: ecs
