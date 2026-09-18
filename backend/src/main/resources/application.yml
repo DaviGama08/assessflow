@@ -2,7 +2,7 @@ spring:
   application:
     name: distributed-quiz
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/distributed_quiz}
+    url: ${DB_URL:jdbc:postgresql://localhost:55432/distributed_quiz}
     username: ${DB_USERNAME:quiz_local}
     password: ${DB_PASSWORD:local_only_change_me}
   jpa:
