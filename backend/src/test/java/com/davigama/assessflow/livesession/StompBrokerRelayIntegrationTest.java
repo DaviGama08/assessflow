@@ -97,7 +97,9 @@ class StompBrokerRelayIntegrationTest {
                 "{\"code\":\"" + code + "\",\"displayName\":\"Guest\"}", null).body(), "participantToken");
 
         StompSession participant = connect(participantToken).get(10, TimeUnit.SECONDS);
+        StompSession attacker = connect(participantToken).get(10, TimeUnit.SECONDS);
         CompletableFuture<String> started = new CompletableFuture<>();
+        CompletableFuture<String> injected = new CompletableFuture<>();
         participant.subscribe("/topic/sessions/" + sessionId, new StompFrameHandler() {
             @Override
             public Type getPayloadType(StompHeaders headers) {
@@ -107,15 +109,27 @@ class StompBrokerRelayIntegrationTest {
             @Override
             @SuppressWarnings("unchecked")
             public void handleFrame(StompHeaders headers, Object payload) {
-                if ("QUESTION_STARTED".equals(String.valueOf(((Map<String, Object>) payload).get("type")))) {
-                    started.complete("QUESTION_STARTED");
-                }
+                String type = String.valueOf(((Map<String, Object>) payload).get("type"));
+                if ("QUESTION_STARTED".equals(type)) started.complete("QUESTION_STARTED");
+                if ("SESSION_FINISHED".equals(type)) injected.complete("SESSION_FINISHED");
             }
         });
         Thread.sleep(500);
+        try {
+            if (attacker.isConnected()) {
+                attacker.send("/topic/sessions/" + sessionId,
+                        Map.of("type", "SESSION_FINISHED", "payload", Map.of("status", "FINISHED")));
+            }
+        } catch (RuntimeException ignored) {
+            // inbound interceptor may close the attacker session
+        }
+        Thread.sleep(500);
+        assertThat(injected.isDone()).isFalse();
         api.send("POST", "/api/v1/organizations/" + org + "/live-sessions/" + sessionId + "/start", null, owner);
         assertThat(started.get(15, TimeUnit.SECONDS)).isEqualTo("QUESTION_STARTED");
+        assertThat(injected.isDone()).isFalse();
         if (participant.isConnected()) participant.disconnect();
+        if (attacker.isConnected()) attacker.disconnect();
     }
 
     private CompletableFuture<StompSession> connect(String token) {
@@ -126,7 +140,7 @@ class StompBrokerRelayIntegrationTest {
                     @Override
                     public void handleException(StompSession session, StompCommand command, StompHeaders headers,
                                                 byte[] payload, Throwable exception) {
-                        throw new IllegalStateException(exception);
+                        // rejected SEND surfaces as an ERROR; do not fail the test thread
                     }
                 });
     }

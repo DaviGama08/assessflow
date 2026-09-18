@@ -11,6 +11,8 @@ wss://api.<domain>/ws
 
 CONNECT with `Authorization: Bearer <access-token-or-participant-token>`. Unauthenticated CONNECT is rejected.
 
+Clients never publish. Inbound `SEND` is rejected for every principal (host included). Host and guest commands stay on REST; STOMP is notifications only. `CONNECT`, `SUBSCRIBE`, `UNSUBSCRIBE`, `DISCONNECT` and heartbeats remain allowed.
+
 ## Topics
 
 | Destination | Who | Events |

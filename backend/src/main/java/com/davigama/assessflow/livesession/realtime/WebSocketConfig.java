@@ -86,6 +86,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             public Message<?> preSend(Message<?> message, MessageChannel channel) {
                 StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
                 if (accessor == null) return message;
+                if (StompCommand.SEND.equals(accessor.getCommand())) {
+                    throw new IllegalArgumentException("Client STOMP SEND is not allowed");
+                }
                 if (StompCommand.CONNECT.equals(accessor.getCommand())) {
                     String header = accessor.getFirstNativeHeader("Authorization");
                     if (header != null && header.startsWith("Bearer ")) {
