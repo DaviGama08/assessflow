@@ -23,7 +23,7 @@ The monorepo has `frontend/`, `backend/`, and `docs/`. Backend packages follow t
 ## Run locally
 
 1. Copy `.env.example` to `.env`. Its credentials are for local development only. Keep `.env` untracked.
-2. Run `docker compose up -d postgres` from the repository root. Wait for the container healthcheck. If port 5432 is occupied, set `POSTGRES_PORT` and use the same port in `DB_URL`.
+2. Run `docker compose up -d postgres` from the repository root. Wait for the container healthcheck. The default host port is 55432 to avoid a local PostgreSQL conflict; set `POSTGRES_PORT` and the matching port in `DB_URL` to change it.
 3. In another terminal, run `cd backend && ./mvnw spring-boot:run`. The defaults match Compose; override `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, and `APP_CORS_ALLOWED_ORIGINS` when needed.
 4. In another terminal, run `cd frontend && npm ci && npm run dev`. Open <http://localhost:5173>. Set `VITE_API_BASE_URL` if the API is elsewhere; it defaults to `http://localhost:8080/api/v1`.
 5. Check <http://localhost:8080/actuator/health> for `{"status":"UP"}`.
