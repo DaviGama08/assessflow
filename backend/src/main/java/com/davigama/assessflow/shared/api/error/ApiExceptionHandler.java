@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -37,6 +38,12 @@ public class ApiExceptionHandler {
     ResponseEntity<ProblemDetail> invalid(Exception exception, HttpServletRequest request) {
         return problem(HttpStatus.BAD_REQUEST, "Invalid request", "Check the request fields and try again.",
                 "INVALID_REQUEST", request);
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    ResponseEntity<ProblemDetail> conflict(OptimisticLockingFailureException exception, HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, "Conflict", "The live session changed. Retry the command.",
+                "LIVE_SESSION_CONFLICT", request);
     }
 
     private ResponseEntity<ProblemDetail> problem(HttpStatus status, String title, String detail,

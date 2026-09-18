@@ -1,6 +1,7 @@
 package com.davigama.assessflow.shared.config;
 
 import com.davigama.assessflow.identity.infrastructure.BearerTokenFilter;
+import com.davigama.assessflow.livesession.infrastructure.ParticipantTokenFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import org.springframework.context.annotation.Bean;
@@ -20,6 +21,7 @@ public class SecurityConfig {
     @Bean PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, BearerTokenFilter bearerFilter,
+                                            ParticipantTokenFilter participantFilter,
                                             @Qualifier("corsConfigurationSource") CorsConfigurationSource cors) throws Exception {
         http.cors(c -> c.configurationSource(cors))
                 .csrf(c -> c.disable())
@@ -27,11 +29,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(a -> a
                         .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh",
                                 "/api/v1/auth/logout",
+                                "/api/v1/live-sessions/join", "/api/v1/live-sessions/preview",
+                                "/ws/**",
                                 "/actuator/health", "/error").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint((request, response, exception) ->
                         unauthorized(response)))
-                .addFilterBefore(bearerFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(bearerFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(participantFilter, BearerTokenFilter.class);
         return http.build();
     }
     private void unauthorized(HttpServletResponse response) throws IOException {

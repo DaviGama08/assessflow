@@ -44,6 +44,11 @@ public interface QuestionRepository extends JpaRepository<Question, UUID> {
     @EntityGraph(attributePaths = "category")
     List<Question> findByIdInAndOrganizationId(Collection<UUID> ids, UUID organizationId);
 
+    @EntityGraph(attributePaths = "options")
+    @Query("select q from Question q where q.id in :ids and q.organizationId = :organizationId")
+    List<Question> findWithOptionsByIdInAndOrganizationId(@Param("ids") Collection<UUID> ids,
+                                                          @Param("organizationId") UUID organizationId);
+
     long countByOrganizationId(UUID organizationId);
 
     long countByCategoryIdAndOrganizationId(UUID categoryId, UUID organizationId);

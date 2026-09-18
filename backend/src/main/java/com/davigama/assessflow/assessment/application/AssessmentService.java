@@ -126,11 +126,11 @@ public class AssessmentService {
         repository.delete(assessment);
     }
 
-    Assessment requireOwned(UUID organizationId, UUID assessmentId) {
+    public Assessment requireOwned(UUID organizationId, UUID assessmentId) {
         return find(organizationId, assessmentId);
     }
 
-    void requireOrganization(UUID organizationId) {
+    public void requireOrganization(UUID organizationId) {
         if (!organizations.existsById(organizationId)) {
             throw new OrganizationException(HttpStatus.NOT_FOUND, "ORGANIZATION_NOT_FOUND",
                     "Organization not found.");
