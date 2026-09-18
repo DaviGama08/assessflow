@@ -35,7 +35,8 @@ public class SecurityConfig {
                                 "/ws/**",
                                 "/generate_204", "/gen_204", "/hotspot-detect.html", "/connecttest.txt",
                                 "/ncsi.txt", "/success.txt", "/library/test/success.html", "/canonical.html",
-                                "/actuator/health", "/actuator/health/**", "/actuator/prometheus", "/error").permitAll()
+                                "/actuator/health", "/actuator/health/**", "/error",
+                                "/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/**", "/join", "/join/**",
                                 "/play/**", "/login", "/register", "/app", "/app/**").permitAll()
                         .anyRequest().authenticated())
