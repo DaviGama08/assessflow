@@ -8,6 +8,7 @@ import com.davigama.assessflow.livesession.api.dto.LiveDtos.SessionResponse;
 import com.davigama.assessflow.livesession.application.LiveSessionService;
 import java.util.List;
 import java.util.UUID;
+import java.nio.charset.StandardCharsets;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -87,7 +88,7 @@ public class LiveSessionHostController {
         String csv = service.exportResultsCsv(user(authentication), organizationId, sessionId);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"live-session-" + sessionId + ".csv\"")
-                .contentType(MediaType.parseMediaType("text/csv"))
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
                 .body(csv);
     }
 
