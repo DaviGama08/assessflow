@@ -17,6 +17,12 @@ public class OrganizationAccess {
                 .orElseThrow(() -> new OrganizationException(HttpStatus.FORBIDDEN, "NOT_ORGANIZATION_MEMBER",
                         "You are not an active member of this organization."));
     }
+    public OrganizationMember requireInstructor(UUID organizationId, UUID userId) {
+        OrganizationMember actor = requireMember(organizationId, userId);
+        if (actor.getRole() == MemberRole.PARTICIPANT) throw forbidden();
+        return actor;
+    }
+
     public OrganizationMember requireManager(UUID organizationId, UUID userId) {
         OrganizationMember actor = requireMember(organizationId, userId);
         if (actor.getRole() != MemberRole.OWNER && actor.getRole() != MemberRole.ADMIN)
@@ -35,6 +41,6 @@ public class OrganizationAccess {
     }
     private OrganizationException forbidden() {
         return new OrganizationException(HttpStatus.FORBIDDEN, "INSUFFICIENT_ORGANIZATION_ROLE",
-                "You do not have permission to manage this membership.");
+                "You do not have permission to perform this action.");
     }
 }

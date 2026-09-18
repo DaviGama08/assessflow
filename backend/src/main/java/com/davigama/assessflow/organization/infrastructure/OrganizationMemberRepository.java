@@ -17,4 +17,5 @@ public interface OrganizationMemberRepository extends JpaRepository<Organization
     @EntityGraph(attributePaths = {"user", "organization"})
     List<OrganizationMember> findByOrganizationIdAndStatusOrderByJoinedAtAsc(UUID organizationId, MemberStatus status);
     long countByOrganizationIdAndRoleAndStatus(UUID organizationId, MemberRole role, MemberStatus status);
+    long countByOrganizationIdAndStatus(UUID organizationId, MemberStatus status);
 }

@@ -4,7 +4,7 @@ import com.davigama.assessflow.identity.domain.User;
 import com.davigama.assessflow.identity.infrastructure.UserRepository;
 import com.davigama.assessflow.organization.domain.*;
 import com.davigama.assessflow.organization.infrastructure.*;
-import java.text.Normalizer;
+import com.davigama.assessflow.shared.Slug;
 import java.time.Clock;
 import java.util.List;
 import java.util.Locale;
@@ -31,7 +31,7 @@ public class OrganizationService {
     }
     @Transactional
     public Organization create(User actor, String name, String suppliedSlug) {
-        String slug = normalizeSlug(suppliedSlug);
+        String slug = Slug.normalize(suppliedSlug);
         if (organizations.existsBySlug(slug)) throw duplicateSlug();
         Organization organization = new Organization(name, slug, clock.instant());
         try { organizations.saveAndFlush(organization); }
@@ -39,16 +39,26 @@ public class OrganizationService {
         members.save(new OrganizationMember(organization, actor, MemberRole.OWNER, clock.instant()));
         return organization;
     }
+    public record OrganizationView(Organization organization, MemberRole currentUserRole) {}
+
     @Transactional(readOnly = true)
-    public List<Organization> list(User actor) {
+    public List<OrganizationView> list(User actor) {
         return members.findByUserIdAndStatus(actor.getId(), MemberStatus.ACTIVE).stream()
-                .map(OrganizationMember::getOrganization).toList();
+                .map(member -> new OrganizationView(member.getOrganization(), member.getRole()))
+                .toList();
     }
     @Transactional(readOnly = true)
-    public Organization get(User actor, UUID organizationId) {
+    public OrganizationView get(User actor, UUID organizationId) {
         Organization organization = find(organizationId);
-        access.requireMember(organizationId, actor.getId());
-        return organization;
+        OrganizationMember member = access.requireMember(organizationId, actor.getId());
+        return new OrganizationView(organization, member.getRole());
+    }
+    @Transactional
+    public OrganizationView rename(User actor, UUID organizationId, String name) {
+        Organization organization = find(organizationId);
+        OrganizationMember member = access.requireManager(organizationId, actor.getId());
+        organization.rename(name, clock.instant());
+        return new OrganizationView(organization, member.getRole());
     }
     @Transactional(readOnly = true)
     public List<OrganizationMember> listMembers(User actor, UUID organizationId) {
@@ -111,13 +121,6 @@ public class OrganizationService {
         if (members.countByOrganizationIdAndRoleAndStatus(organizationId, MemberRole.OWNER, MemberStatus.ACTIVE) <= 1)
             throw new OrganizationException(HttpStatus.CONFLICT, "LAST_OWNER",
                     "An organization must have at least one active owner.");
-    }
-    private String normalizeSlug(String supplied) {
-        String slug = Normalizer.normalize(supplied.trim().toLowerCase(Locale.ROOT), Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "").replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "");
-        if (slug.isBlank() || slug.length() > 100)
-            throw new OrganizationException(HttpStatus.BAD_REQUEST, "INVALID_SLUG", "Invalid organization slug.");
-        return slug;
     }
     private OrganizationException duplicateSlug() {
         return new OrganizationException(HttpStatus.CONFLICT, "SLUG_EXISTS", "Organization slug is already in use.");

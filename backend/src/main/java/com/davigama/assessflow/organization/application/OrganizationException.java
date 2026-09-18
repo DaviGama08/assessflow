@@ -1,15 +1,10 @@
 package com.davigama.assessflow.organization.application;
 
+import com.davigama.assessflow.shared.exception.DomainException;
 import org.springframework.http.HttpStatus;
 
-public class OrganizationException extends RuntimeException {
-    private final HttpStatus status;
-    private final String code;
+public class OrganizationException extends DomainException {
     public OrganizationException(HttpStatus status, String code, String message) {
-        super(message);
-        this.status = status;
-        this.code = code;
+        super(status, code, message);
     }
-    public HttpStatus getStatus() { return status; }
-    public String getCode() { return code; }
 }

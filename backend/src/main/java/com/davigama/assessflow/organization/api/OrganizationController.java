@@ -23,11 +23,18 @@ public class OrganizationController {
                                             @NotBlank String slug) {}
     public record AddMemberRequest(@NotBlank String email, @NotNull MemberRole role) {}
     public record ChangeRoleRequest(@NotNull MemberRole role) {}
+    public record RenameOrganizationRequest(@NotBlank @Size(max = 200) String name) {}
     public record OrganizationResponse(UUID id, String name, String slug, OrganizationStatus status,
-                                       Instant createdAt, Instant updatedAt) {
-        static OrganizationResponse from(Organization organization) {
+                                       MemberRole currentUserRole, Instant createdAt, Instant updatedAt) {
+        static OrganizationResponse from(OrganizationService.OrganizationView view) {
+            Organization organization = view.organization();
             return new OrganizationResponse(organization.getId(), organization.getName(), organization.getSlug(),
-                    organization.getStatus(), organization.getCreatedAt(), organization.getUpdatedAt());
+                    organization.getStatus(), view.currentUserRole(), organization.getCreatedAt(),
+                    organization.getUpdatedAt());
+        }
+        static OrganizationResponse from(Organization organization, MemberRole currentUserRole) {
+            return new OrganizationResponse(organization.getId(), organization.getName(), organization.getSlug(),
+                    organization.getStatus(), currentUserRole, organization.getCreatedAt(), organization.getUpdatedAt());
         }
     }
     public record MemberResponse(UUID id, UUID organizationId, UUID userId, String email, String displayName,
@@ -46,7 +53,7 @@ public class OrganizationController {
         Organization organization = service.create(current(authentication), request.name(), request.slug());
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
                 .buildAndExpand(organization.getId()).toUri();
-        return ResponseEntity.created(location).body(OrganizationResponse.from(organization));
+        return ResponseEntity.created(location).body(OrganizationResponse.from(organization, MemberRole.OWNER));
     }
     @GetMapping
     public List<OrganizationResponse> list(Authentication authentication) {
@@ -55,6 +62,12 @@ public class OrganizationController {
     @GetMapping("/{organizationId}")
     public OrganizationResponse get(@PathVariable UUID organizationId, Authentication authentication) {
         return OrganizationResponse.from(service.get(current(authentication), organizationId));
+    }
+    @PatchMapping("/{organizationId}")
+    public OrganizationResponse rename(@PathVariable UUID organizationId,
+                                       @Valid @RequestBody RenameOrganizationRequest request,
+                                       Authentication authentication) {
+        return OrganizationResponse.from(service.rename(current(authentication), organizationId, request.name()));
     }
     @GetMapping("/{organizationId}/members")
     public List<MemberResponse> listMembers(@PathVariable UUID organizationId, Authentication authentication) {

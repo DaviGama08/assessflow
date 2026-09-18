@@ -22,6 +22,11 @@ public class Organization {
         this.createdAt = now;
         this.updatedAt = now;
     }
+    public void rename(String name, Instant now) {
+        this.name = name.trim();
+        this.updatedAt = now;
+    }
+
     public UUID getId() { return id; }
     public String getName() { return name; }
     public String getSlug() { return slug; }

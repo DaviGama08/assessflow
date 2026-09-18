@@ -36,7 +36,7 @@ class AuthApiIntegrationTest {
     @Test
     void registrationLoginRefreshAndLogout() throws Exception {
         assertThat(send("GET", "/api/v1/auth/me", null, null, null).statusCode()).isEqualTo(401);
-        assertThat(send("GET", "/api/v1/assessments", null, null, null).statusCode()).isEqualTo(401);
+        assertThat(send("GET", "/api/v1/organizations", null, null, null).statusCode()).isEqualTo(401);
         String registration = "{\"email\":\"  MEMBER@Example.com  \",\"password\":\"correct-password-123\",\"displayName\":\"Member\"}";
         var registered = send("POST", "/api/v1/auth/register", registration, null, null);
         assertThat(registered.statusCode()).isEqualTo(200);
