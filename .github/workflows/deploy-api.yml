@@ -1,15 +1,15 @@
-name: Deploy backend
+name: Deploy API
 on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: ghcr.io/<owner>/assessflow-backend:<40-char-git-sha> or @sha256:<digest>
+        description: ghcr.io/<owner>/assessflow-api:<40-char-git-sha> or @sha256:<digest>
         required: true
 permissions:
   contents: read
   id-token: write
 concurrency:
-  group: production-backend
+  group: production-api
   cancel-in-progress: false
 jobs:
   azure:
@@ -31,7 +31,7 @@ jobs:
         run: |
           set -euo pipefail
           owner=$(printf '%s' "$OWNER" | tr '[:upper:]' '[:lower:]')
-          prefix="ghcr.io/${owner}/assessflow-backend"
+          prefix="ghcr.io/${owner}/assessflow-api"
           sha_re='^[0-9a-f]{40}$'
           digest_re='^sha256:[0-9a-f]{64}$'
           case "$IMAGE" in

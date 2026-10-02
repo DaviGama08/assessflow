@@ -9,7 +9,7 @@ Multi-tenant assessments, question bank, live sessions, Local Live without Inter
 - Configurable refresh-cookie SameSite (None requires Secure)
 - Explicit HTTP proxy modes: `none`, `forwarded`, `cloudflare`
 - OpenAPI (`/v3/api-docs`) on local/test; Swagger UI off in production
-- Multi-stage non-root backend image and GHCR publish workflow
+- Multi-stage non-root API image and GHCR publish workflow
 - Dependabot, CodeQL, Trivy + CycloneDX SBOM on the published image
 - Playwright live-session E2E in CI
 - Deployment runbook and production checklist

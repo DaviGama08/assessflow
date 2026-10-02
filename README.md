@@ -53,8 +53,8 @@ Java 25 · Spring Boot 4.1.1 · PostgreSQL 17 · Flyway · React 19 · TypeScrip
 ```bash
 cp .env.example .env
 docker compose up -d postgres
-cd backend && ./mvnw spring-boot:run
-cd frontend && npm ci && npm run dev
+cd api && ./mvnw spring-boot:run
+cd web && npm ci && npm run dev
 ```
 
 Open http://localhost:5173. Health: http://localhost:8080/actuator/health  
@@ -63,8 +63,8 @@ OpenAPI (local): http://localhost:8080/swagger-ui/index.html
 Quality:
 
 ```bash
-cd backend && ./mvnw clean verify
-cd frontend && npm ci && npm run format:check && npm run lint && npm test && VITE_SAME_ORIGIN=true npm run build
+cd api && ./mvnw clean verify
+cd web && npm ci && npm run format:check && npm run lint && npm test && VITE_SAME_ORIGIN=true npm run build
 docker compose config
 ```
 
@@ -74,14 +74,14 @@ Profile `local-live`: same-origin SPA + API + `/ws`, PostgreSQL on `127.0.0.1`, 
 
 ## Production
 
-Images: `ghcr.io/<owner>/assessflow-backend:<git-sha>`  
-Frontend env: `VITE_API_BASE_URL`, `VITE_PUBLIC_APP_URL`, `VITE_WS_URL` (https/wss, never localhost).  
+Images: `ghcr.io/<owner>/assessflow-api:<git-sha>`
+Web env: `VITE_API_BASE_URL`, `VITE_PUBLIC_APP_URL`, `VITE_WS_URL` (https/wss, never localhost).
 Preferred hosts: `https://app.<domain>` and `https://api.<domain>` so the refresh cookie can stay `SameSite=Strict`.
 
 ## Testing
 
-Backend: JUnit + Testcontainers (PostgreSQL, Redis, RabbitMQ), including a two-instance STOMP fan-out test.  
-Frontend: Vitest. Playwright E2E (`npm run test:e2e`) against a local API in CI.
+API: JUnit + Testcontainers (PostgreSQL, Redis, RabbitMQ), including a two-instance STOMP fan-out test.
+Web: Vitest. Playwright E2E (`npm run test:e2e`) against a local API in CI.
 
 ## Security
 

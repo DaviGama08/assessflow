@@ -8,7 +8,7 @@
 - [ ] `DB_URL` uses TLS (`sslmode=require`)
 - [ ] `DB_POOL_MAX` × replicas fits Neon
 - [ ] `APP_CORS_ALLOWED_ORIGINS` is the exact Pages origin (no `*`)
-- [ ] `APP_WS_ALLOWED_ORIGINS` matches the frontend
+- [ ] `APP_WS_ALLOWED_ORIGINS` matches the web origin
 - [ ] Refresh cookie `Secure`, `HttpOnly`, `SameSite=Strict`, path `/api/v1/auth`
 - [ ] `SameSite=None` not used unless `Secure=true` (startup rejects otherwise)
 - [ ] Lean: 1 replica, `APP_REALTIME_BROKER_MODE=simple`, `APP_REDIS_ENABLED=false`
@@ -19,4 +19,4 @@
 - [ ] Prometheus not exposed on the public internet
 - [ ] Secrets live in Azure Container Apps / GitHub environment, not in git or the image
 - [ ] Known-good previous image SHA recorded for rollback
-- [ ] Smoke: HTTPS frontend, HTTPS `/actuator/health/liveness` and `readiness`, login, refresh, guest join, answer, finish
+- [ ] Smoke: HTTPS web app, HTTPS `/actuator/health/liveness` and `readiness`, login, refresh, guest join, answer, finish

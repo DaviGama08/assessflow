@@ -10,11 +10,11 @@ The API issues random opaque tokens. It stores only their SHA-256 hashes in Post
 
 On page load and after an expired access token, the SPA calls `POST /api/v1/auth/refresh` with credentials. Refresh rotates the refresh token and issues a new access token. Reusing an old refresh token fails. Logout deletes the current access and refresh token records and clears the cookie. Other active access tokens from separate sessions remain valid until expiration or their own logout.
 
-The API is stateless at the HTTP session layer. Spring Security requires bearer authentication except for register, login, refresh, and actuator health. The frontend protects the assessment page and offers `/login` and `/register`. `GET /api/v1/auth/me` returns only public user fields.
+The API is stateless at the HTTP session layer. Spring Security requires bearer authentication except for register, login, refresh, and actuator health. The web client protects the assessment page and offers `/login` and `/register`. `GET /api/v1/auth/me` returns only public user fields.
 
 ## CORS and CSRF
 
-Only configured SPA origins are allowed by CORS; credentials and the Authorization header are enabled. Refresh and logout require an Origin matching the configured allowed origins. The refresh cookie has SameSite=Strict. These controls guard cookie-based actions against cross-site requests. Register and login use request bodies without relying on existing cookies. Deploy frontend and API on the same site so SameSite=Strict permits refresh. If their origins differ across sites, revisit the cookie and CSRF design before deployment.
+Only configured SPA origins are allowed by CORS; credentials and the Authorization header are enabled. Refresh and logout require an Origin matching the configured allowed origins. The refresh cookie has SameSite=Strict. These controls guard cookie-based actions against cross-site requests. Register and login use request bodies without relying on existing cookies. Deploy the web client and API on the same site so SameSite=Strict permits refresh. If their origins differ across sites, revisit the cookie and CSRF design before deployment.
 
 ## Consequences
 

@@ -63,7 +63,7 @@ export function LocalLivePage() {
       )}
       <section className="panel">
         <p>
-          Backend ✓ · Database {status.database} · LAN {status.selectedHost} · WebSocket{' '}
+          API ✓ · Database {status.database} · LAN {status.selectedHost} · WebSocket{' '}
           {status.websocket}
         </p>
         <p>

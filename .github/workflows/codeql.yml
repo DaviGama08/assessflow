@@ -24,12 +24,12 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
-          cache-dependency-path: backend/pom.xml
+          cache-dependency-path: api/pom.xml
       - uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-      - name: Compile backend for CodeQL
+      - name: Compile API for CodeQL
         if: matrix.language == 'java-kotlin'
         run: ./mvnw -B -DskipTests compile
-        working-directory: backend
+        working-directory: api
       - uses: github/codeql-action/analyze@v3

@@ -8,7 +8,7 @@ if ! docker image inspect postgres:17.6-alpine >/dev/null 2>&1; then
   echo "postgres:17.6-alpine image is not present. Pull it before going offline."
   missing=1
 fi
-if [[ ! -f "$ROOT/backend/target/assessflow-backend-0.1.0.jar" ]]; then
+if [[ ! -f "$ROOT/api/target/assessflow-api-0.1.0.jar" ]]; then
   echo "Local Live jar is missing. Run scripts/build-local-live.sh"
   missing=1
 fi

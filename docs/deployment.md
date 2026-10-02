@@ -53,7 +53,7 @@ Do not run Redis or RabbitMQ as disposable sidecars. Lean mode leaves them disab
 
 ## GitHub → GHCR → Azure
 
-CI on `main`/`dev` verifies tests, frontend, container smoke and Playwright. After CI succeeds on `main`, `Publish image` pushes `ghcr.io/<owner>/assessflow-backend:<full-sha>` (never deploy `latest`). There is no `workflow_dispatch` on that workflow: production images come only from a `main` commit whose CI succeeded. Trivy fails the job on applicable CRITICAL findings, then Azure (when configured) deploys the scanned digest `ghcr.io/<owner>/assessflow-backend@sha256:…`. CycloneDX SBOM is an artifact. The GHCR package is public; Azure pulls anonymously. Do not store `GITHUB_TOKEN` as a Container App registry password.
+CI on `main`/`dev` verifies API and web tests, container smoke and Playwright. After CI succeeds on `main`, `Publish image` pushes `ghcr.io/<owner>/assessflow-api:<full-sha>` (never deploy `latest`). There is no `workflow_dispatch` on that workflow: production images come only from a `main` commit whose CI succeeded. Trivy fails the job on applicable CRITICAL findings, then Azure (when configured) deploys the scanned digest `ghcr.io/<owner>/assessflow-api@sha256:…`. CycloneDX SBOM is an artifact. The GHCR package is public; Azure pulls anonymously. Do not store `GITHUB_TOKEN` as a Container App registry password.
 
 Azure authentication uses GitHub OIDC (`azure/login` federated credential). Create GitHub environment `production` with:
 
@@ -67,7 +67,7 @@ Azure authentication uses GitHub OIDC (`azure/login` federated credential). Crea
 
 If `AZURE_CONTAINER_APP_NAME` is empty, image publish still runs and Azure deploy is skipped.
 
-Rollback: `Deploy backend` workflow_dispatch accepts only `ghcr.io/<owner>/assessflow-backend:<40-char-git-sha>` or `@sha256:<digest>`. Do not rebuild old source with new dependencies. Application rollback is not a Flyway data rollback.
+Rollback: `Deploy API` workflow_dispatch accepts only `ghcr.io/<owner>/assessflow-api:<40-char-git-sha>` or `@sha256:<digest>`. Do not rebuild old source with new dependencies. Application rollback is not a Flyway data rollback.
 
 ## Azure Container Apps
 
@@ -81,7 +81,7 @@ Rollback: `Deploy backend` workflow_dispatch accepts only `ghcr.io/<owner>/asses
 
 ## Cloudflare Pages
 
-- Project root `frontend/`
+- Project root `web/`
 - Build: `npm ci && npm run build`
 - Output `dist`
 - Env: `VITE_API_BASE_URL=https://api.<domain>/api/v1`, `VITE_PUBLIC_APP_URL=https://app.<domain>`, `VITE_WS_URL=wss://api.<domain>/ws`
