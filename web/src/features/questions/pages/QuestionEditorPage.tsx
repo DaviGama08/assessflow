@@ -58,7 +58,7 @@ export function QuestionEditorPage({
         <div>
           <p className="eyebrow">QUESTION BANK</p>
           <h1>{questionId ? 'Edit question' : 'New question'}</h1>
-          <p>The backend validates option rules for each question type.</p>
+          <p>The API validates option rules for each question type.</p>
         </div>
       </div>
       {error && (

@@ -5,7 +5,7 @@ on:
   pull_request:
     branches: [main, dev]
 jobs:
-  backend:
+  api:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,28 +14,28 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
-          cache-dependency-path: backend/pom.xml
+          cache-dependency-path: api/pom.xml
       - run: ./mvnw clean verify
-        working-directory: backend
-  frontend:
+        working-directory: api
+  web:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version-file: frontend/.nvmrc
+          node-version-file: web/.nvmrc
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: web/package-lock.json
       - run: npm ci
-        working-directory: frontend
+        working-directory: web
       - run: npm run format:check
-        working-directory: frontend
+        working-directory: web
       - run: npm run lint
-        working-directory: frontend
+        working-directory: web
       - run: npm run test
-        working-directory: frontend
+        working-directory: web
       - run: VITE_SAME_ORIGIN=true npm run build
-        working-directory: frontend
+        working-directory: web
   container:
     runs-on: ubuntu-latest
     services:
@@ -54,8 +54,8 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v4
-      - run: docker build --build-arg REVISION=${{ github.sha }} -t assessflow-backend:${{ github.sha }} .
-        working-directory: backend
+      - run: docker build --build-arg REVISION=${{ github.sha }} -t assessflow-api:${{ github.sha }} .
+        working-directory: api
       - name: Smoke liveness and non-root user
         run: |
           docker run -d --name assessflow-api --network host \
@@ -64,7 +64,7 @@ jobs:
             -e DB_USERNAME=assessflow \
             -e DB_PASSWORD=test \
             -e APP_CORS_ALLOWED_ORIGINS=http://127.0.0.1:8080 \
-            assessflow-backend:${{ github.sha }}
+            assessflow-api:${{ github.sha }}
           user=$(docker inspect assessflow-api --format '{{.Config.User}}')
           test "$user" = "10001"
           for i in $(seq 1 40); do
@@ -99,17 +99,17 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
-          cache-dependency-path: backend/pom.xml
+          cache-dependency-path: api/pom.xml
       - uses: actions/setup-node@v4
         with:
-          node-version-file: frontend/.nvmrc
+          node-version-file: web/.nvmrc
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: web/package-lock.json
       - run: ./mvnw -B -DskipTests package
-        working-directory: backend
+        working-directory: api
       - name: Start API
         run: |
-          java -jar backend/target/assessflow-backend-0.1.0.jar \
+          java -jar api/target/assessflow-api-0.1.0.jar \
             --spring.profiles.active=local \
             --spring.datasource.url=jdbc:postgresql://127.0.0.1:5432/assessflow \
             --spring.datasource.username=assessflow \
@@ -125,10 +125,10 @@ jobs:
           cat api.log
           exit 1
       - run: npm ci
-        working-directory: frontend
+        working-directory: web
       - run: npx playwright install --with-deps chromium
-        working-directory: frontend
+        working-directory: web
       - run: VITE_SAME_ORIGIN=true VITE_API_BASE_URL=http://127.0.0.1:8080/api/v1 VITE_PUBLIC_APP_URL=http://127.0.0.1:4173 VITE_WS_URL=ws://127.0.0.1:8080/ws npm run build
-        working-directory: frontend
+        working-directory: web
       - run: E2E_API_URL=http://127.0.0.1:8080/api/v1 npm run test:e2e
-        working-directory: frontend
+        working-directory: web

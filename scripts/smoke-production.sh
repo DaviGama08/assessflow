@@ -7,5 +7,5 @@ curl -fsS "${APP_URL}" >/dev/null
 curl -fsS "${API_URL}/actuator/health/liveness"
 curl -fsS "${API_URL}/actuator/health/readiness"
 echo
-echo "Frontend and API health endpoints responded over HTTPS."
+echo "Web app and API health endpoints responded over HTTPS."
 echo "Complete login, refresh, live join, answer and finish in a browser before calling the release done."

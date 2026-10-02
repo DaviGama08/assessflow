@@ -38,7 +38,7 @@ public final class ProductionGuards {
 
     public static void requirePublicOrigin(String name, String origins) {
         if (origins == null || origins.isBlank()) {
-            throw new IllegalStateException(name + " must list the production frontend origin.");
+            throw new IllegalStateException(name + " must list the production web origin.");
         }
         if (origins.contains("*")) {
             throw new IllegalStateException(name + " cannot use a wildcard with credentialed cookies.");

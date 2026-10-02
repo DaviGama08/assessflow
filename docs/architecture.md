@@ -35,7 +35,7 @@ Assessments belong to one organization. OWNER, ADMIN and INSTRUCTOR may create, 
 
 ## Question bank
 
-Questions are reusable inside an organization. Types are single choice, multiple choice and true/false. The backend validates option cardinality and correctness. Categories are unique per organization slug. Delete archives a question.
+Questions are reusable inside an organization. Types are single choice, multiple choice and true/false. The API validates option cardinality and correctness. Categories are unique per organization slug. Delete archives a question.
 
 ## Assessment builder
 
@@ -43,9 +43,9 @@ Questions are reusable inside an organization. Types are single choice, multiple
 
 ## Branding
 
-Each organization has optional branding: display name, logo URL and `#RRGGBB` colors. The backend does not download logos or accept custom HTML, CSS or JavaScript. OWNER and ADMIN may change branding. The product name remains AssessFlow; branding labels the customer workspace.
+Each organization has optional branding: display name, logo URL and `#RRGGBB` colors. The API does not download logos or accept custom HTML, CSS or JavaScript. OWNER and ADMIN may change branding. The product name remains AssessFlow; branding labels the customer workspace.
 
-## Frontend
+## Web client
 
 Authenticated users pick an organization, then work inside `/app/organizations/:organizationId` with Dashboard, Assessments, Question Bank, Members and Settings. Navigation is role-aware. The API remains the authority. Public join routes `/join` and `/join/:code` do not require login.
 

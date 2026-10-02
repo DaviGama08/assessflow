@@ -8,7 +8,7 @@ Phase 1 has one small domain and a single PostgreSQL database. The academic syst
 
 ## Decision
 
-Keep one Spring Boot application, organized by feature with API, application, domain and infrastructure packages. The frontend remains a separate application. Use stable REST contracts and Flyway migrations.
+Keep one Spring Boot application, organized by feature with API, application, domain and infrastructure packages. The web client remains a separate application. Use stable REST contracts and Flyway migrations.
 
 ## Consequences
 

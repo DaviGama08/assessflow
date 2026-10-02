@@ -6,11 +6,14 @@
 **/target/
 **/node_modules/
 **/dist/
-backend/src/main/resources/static/
+api/src/main/resources/static/
 *.log
 .DS_Store
 
 *.tsbuildinfo
-frontend/playwright-report/
-frontend/test-results/
-frontend/blob-report/
+web/playwright-report/
+web/test-results/
+web/blob-report/
+
+# Local run notes; keep client-specific instructions out of Git.
+cheatsheet.md

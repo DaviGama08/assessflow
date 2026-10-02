@@ -6,7 +6,7 @@ Local Live runs a live session **without Internet**. Phones still need a local n
 
 1. On a network, run `scripts/build-local-live.sh` and `scripts/local-live/prepare.sh`.
 2. Start PostgreSQL with `docker compose -f compose.local-live.yaml up -d` (port bound to 127.0.0.1).
-3. `SPRING_PROFILES_ACTIVE=local-live java -jar backend/target/assessflow-backend-0.1.0.jar`
+3. `SPRING_PROFILES_ACTIVE=local-live java -jar api/target/assessflow-api-0.1.0.jar`
 4. Open `http://{LAN-IP}:8080`, sign in (local account), import a `.assessflow.json` package or use a local published assessment, start a live session.
 5. Disconnect the Internet uplink if you want. Keep the LAN.
 6. Phones on the same Wi-Fi scan the Join QR.

@@ -29,14 +29,14 @@ jobs:
         run: |
           sha="${{ github.event.workflow_run.head_sha }}"
           owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')
-          image="ghcr.io/${owner}/assessflow-backend"
+          image="ghcr.io/${owner}/assessflow-api"
           echo "image=${image}" >> "$GITHUB_OUTPUT"
           echo "sha=${sha}" >> "$GITHUB_OUTPUT"
           echo "tags=${image}:${sha}" >> "$GITHUB_OUTPUT"
       - uses: docker/build-push-action@v6
         id: push
         with:
-          context: backend
+          context: api
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
@@ -57,7 +57,7 @@ jobs:
             ${{ steps.meta.outputs.tags }}
       - uses: actions/upload-artifact@v4
         with:
-          name: assessflow-backend-sbom
+          name: assessflow-api-sbom
           path: sbom.cdx.json
       - id: refs
         run: |

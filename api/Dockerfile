@@ -10,7 +10,7 @@ RUN ./mvnw -B -DskipTests package
 FROM eclipse-temurin:25-jre
 RUN useradd --system --no-create-home --uid 10001 assessflow
 WORKDIR /app
-COPY --from=build /src/target/assessflow-backend-0.1.0.jar app.jar
+COPY --from=build /src/target/assessflow-api-0.1.0.jar app.jar
 USER 10001
 EXPOSE 8080
 ENV SERVER_PORT=8080

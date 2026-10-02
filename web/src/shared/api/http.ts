@@ -29,7 +29,7 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
       if (refreshed) response = await send(refreshed)
     }
   } catch {
-    throw new ApiError(0, 'Could not connect to the API. Check that the backend is running.')
+    throw new ApiError(0, 'Could not connect to the API. Check that the API is running.')
   }
   if (!response.ok) {
     const problem = (await response.json().catch(() => null)) as { detail?: string } | null

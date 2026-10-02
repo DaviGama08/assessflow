@@ -118,14 +118,14 @@ docker compose up -d postgres
 Run the backend:
 
 ```bash
-cd backend
+cd api
 ./mvnw spring-boot:run
 ```
 
 Run the frontend:
 
 ```bash
-cd frontend
+cd web
 npm ci
 npm run dev
 ```
@@ -153,14 +153,14 @@ http://localhost:8080/swagger-ui/index.html
 Backend:
 
 ```bash
-cd backend
+cd api
 ./mvnw clean verify
 ```
 
 Frontend:
 
 ```bash
-cd frontend
+cd web
 npm ci
 npm run format:check
 npm run lint
@@ -169,6 +169,10 @@ VITE_SAME_ORIGIN=true npm run build
 ```
 
 The backend integration suite includes PostgreSQL, Redis and RabbitMQ scenarios through Testcontainers. Frontend end-to-end coverage uses Playwright.
+
+## Production
+
+Publish immutable API images as `ghcr.io/<owner>/assessflow-api:<git-sha>`. Configure the web application with `VITE_API_BASE_URL`, `VITE_PUBLIC_APP_URL` and `VITE_WS_URL`; production values must use HTTPS/WSS and must not point to localhost. Prefer separate `app.<domain>` and `api.<domain>` hosts so the refresh cookie can remain `SameSite=Strict`.
 
 ## Security
 
