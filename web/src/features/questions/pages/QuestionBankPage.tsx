@@ -88,39 +88,10 @@ export function QuestionBankPage({ organizationId }: { organizationId: string })
         </p>
       )}
       <section className="panel">
-        <h2>Categories</h2>
-        <div className="filters">
-          {categories.map((item) => (
-            <span key={item.id}>
-              {item.name} <small>({item.slug})</small>
-            </span>
-          ))}
+        <div className="listToolbar">
+          <h2>All questions</h2>
+          <span className="statusPill">{data?.totalElements ?? 0} questions</span>
         </div>
-        <form className="filters" onSubmit={createCategory}>
-          <label>
-            Name
-            <input
-              required
-              maxLength={200}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
-          </label>
-          <label>
-            Slug
-            <input
-              required
-              maxLength={100}
-              value={slug}
-              onChange={(event) => setSlug(event.target.value)}
-            />
-          </label>
-          <button disabled={busy} type="submit">
-            Add category
-          </button>
-        </form>
-      </section>
-      <section className="panel" style={{ marginTop: '1rem' }}>
         <div className="filters">
           <label>
             Search
@@ -201,7 +172,8 @@ export function QuestionBankPage({ organizationId }: { organizationId: string })
               <div>
                 <strong>{question.text}</strong>
                 <small>
-                  {question.type} · {question.difficulty} · {question.status} ·{' '}
+                  {question.type.replaceAll('_', ' ').toLowerCase()} ·{' '}
+                  {question.difficulty.toLowerCase()} · {question.status.toLowerCase()} ·{' '}
                   {question.category.name}
                 </small>
               </div>
@@ -229,7 +201,7 @@ export function QuestionBankPage({ organizationId }: { organizationId: string })
         ) : (
           <p>No questions match these filters.</p>
         )}
-        <div className="inlineActions" style={{ marginTop: '1rem' }}>
+        <div className="inlineActions paginationBar">
           <button
             className="buttonSecondary"
             disabled={!data || data.first}
@@ -246,6 +218,39 @@ export function QuestionBankPage({ organizationId }: { organizationId: string })
           </button>
         </div>
       </section>
+      <details className="panel categoryPanel">
+        <summary>Manage categories · {categories.length}</summary>
+        <div className="categoryTags">
+          {categories.map((item) => (
+            <span key={item.id}>
+              {item.name} <small>({item.slug})</small>
+            </span>
+          ))}
+        </div>
+        <form className="filters" onSubmit={createCategory}>
+          <label>
+            Name
+            <input
+              required
+              maxLength={200}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+            />
+          </label>
+          <label>
+            Slug
+            <input
+              required
+              maxLength={100}
+              value={slug}
+              onChange={(event) => setSlug(event.target.value)}
+            />
+          </label>
+          <button disabled={busy} type="submit">
+            Add category
+          </button>
+        </form>
+      </details>
     </>
   )
 }

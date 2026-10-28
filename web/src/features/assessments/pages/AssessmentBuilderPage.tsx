@@ -239,7 +239,29 @@ export function AssessmentBuilderPage({
           <button
             key={item}
             role="tab"
+            id={`assessment-tab-${item}`}
+            aria-controls={`assessment-panel-${item}`}
+            tabIndex={tab === item ? 0 : -1}
             aria-selected={tab === item}
+            onKeyDown={(event) => {
+              const tabs: Tab[] = ['general', 'questions', 'settings']
+              const index = tabs.indexOf(item)
+              const next =
+                event.key === 'ArrowRight'
+                  ? tabs[(index + 1) % tabs.length]
+                  : event.key === 'ArrowLeft'
+                    ? tabs[(index + tabs.length - 1) % tabs.length]
+                    : event.key === 'Home'
+                      ? tabs[0]
+                      : event.key === 'End'
+                        ? tabs[tabs.length - 1]
+                        : null
+              if (next) {
+                event.preventDefault()
+                setTab(next)
+                document.getElementById(`assessment-tab-${next}`)?.focus()
+              }
+            }}
             className={tab === item ? undefined : 'buttonSecondary'}
             onClick={() => setTab(item)}
           >
@@ -247,7 +269,12 @@ export function AssessmentBuilderPage({
           </button>
         ))}
       </div>
-      <section className="panel">
+      <section
+        className="panel"
+        role="tabpanel"
+        id={`assessment-panel-${tab}`}
+        aria-labelledby={`assessment-tab-${tab}`}
+      >
         {tab === 'questions' ? (
           <AssessmentQuestionsPanel
             items={items}
