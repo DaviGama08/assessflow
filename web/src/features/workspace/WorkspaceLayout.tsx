@@ -15,8 +15,8 @@ export function WorkspaceLayout({ user, onSignOut, children }: Props) {
   const { organizationId, organization, branding, role, error } = useOrganization()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
-  const primary = branding?.primaryColor || '#5369e8'
-  const secondary = branding?.secondaryColor || '#101e32'
+  const primary = branding?.primaryColor || '#345bd5'
+  const secondary = branding?.secondaryColor || '#111d30'
   const displayName = branding?.displayName || organization?.name || 'Workspace'
 
   useEffect(() => {
@@ -42,10 +42,14 @@ export function WorkspaceLayout({ user, onSignOut, children }: Props) {
           )}
           <span>
             <strong>AssessFlow</strong>
-            <small>powered workspace: {displayName}</small>
+            <small>Assessment workspace</small>
           </span>
         </Link>
-        <WorkspaceNav organizationId={organizationId} role={role} />
+        <div>
+          <p className="workspaceNavLabel">WORKSPACE</p>
+          <WorkspaceNav organizationId={organizationId} role={role} />
+        </div>
+        <div className="workspaceNavFooter">{displayName}</div>
       </aside>
       <div className="workspaceMain">
         <header className="workspaceHeader">

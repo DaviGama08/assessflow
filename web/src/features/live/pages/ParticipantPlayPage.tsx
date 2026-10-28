@@ -89,7 +89,7 @@ export function ParticipantPlayPage() {
     <main className="playPage">
       <header>
         <strong>{state.sessionName}</strong>
-        <small>{connection}</small>
+        <small className="connectionLabel">{connection}</small>
         {token && state.status !== 'FINISHED' && state.status !== 'CANCELLED' && (
           <button
             className="buttonSecondary"
@@ -106,15 +106,16 @@ export function ParticipantPlayPage() {
       </header>
       {error && <p role="alert">{error}</p>}
       {state.status === 'WAITING' && (
-        <section>
+        <section className="playCard">
           <h1>You're in!</h1>
           <p>Waiting for the instructor to start…</p>
         </section>
       )}
       {state.status === 'ACTIVE' && state.questionOpen && state.question && (
-        <section>
-          <p>
-            {state.question.index + 1} / {state.question.total}
+        <section className="playCard">
+          <p className="playProgress">
+            QUESTION {String(state.question.index + 1).padStart(2, '0')} /{' '}
+            {String(state.question.total).padStart(2, '0')}
           </p>
           <h1>{state.question.text}</h1>
           {state.alreadyAnswered ? (
@@ -124,7 +125,8 @@ export function ParticipantPlayPage() {
               {state.question.options.map((option) => (
                 <button
                   key={option.id}
-                  className={selected.includes(option.id) ? undefined : 'buttonSecondary'}
+                  className="answerOption"
+                  aria-pressed={selected.includes(option.id)}
                   onClick={() =>
                     setSelected(
                       state.question?.type === 'MULTIPLE_CHOICE'
@@ -138,7 +140,11 @@ export function ParticipantPlayPage() {
                   {option.text}
                 </button>
               ))}
-              <button disabled={busy || selected.length === 0} onClick={() => void submit()}>
+              <button
+                className="submitAnswer"
+                disabled={busy || selected.length === 0}
+                onClick={() => void submit()}
+              >
                 Submit
               </button>
             </>
@@ -146,12 +152,12 @@ export function ParticipantPlayPage() {
         </section>
       )}
       {state.status === 'ACTIVE' && !state.questionOpen && (
-        <section>
+        <section className="playCard">
           <h1>Waiting for the next question…</h1>
         </section>
       )}
       {(state.status === 'FINISHED' || state.status === 'CANCELLED') && (
-        <section>
+        <section className="playCard">
           {state.showResults && state.score ? (
             <>
               <h1>Session finished</h1>
