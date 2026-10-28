@@ -117,106 +117,140 @@ export function HostLivePage() {
           {error}
         </p>
       )}
-      <section className="panel">
-        <h2>Code {session.joinCode}</h2>
-        <p>{url}</p>
-        <div className="hostQr">
-          <QrCode value={url} />
-        </div>
-        <p>{people.length} participants</p>
-        {session.status === 'FINISHED' && (
-          <button
-            className="buttonSecondary"
-            onClick={() => {
-              void fetch(
-                `${API_BASE_URL}/organizations/${organizationId}/live-sessions/${sessionId}/export`,
-                { headers: token ? { Authorization: `Bearer ${token}` } : {} },
-              )
-                .then((response) => response.blob())
-                .then((blob) => {
-                  const link = document.createElement('a')
-                  link.href = URL.createObjectURL(blob)
-                  link.download = `live-session-${sessionId}.csv`
-                  link.click()
-                })
-            }}
-          >
-            Export results
-          </button>
-        )}
-        {session.status === 'WAITING' && (
-          <button
-            disabled={busy}
-            onClick={() => void run(() => liveApi.start(organizationId, sessionId))}
-          >
-            Start Session
-          </button>
-        )}
-        {session.status === 'ACTIVE' && session.questionOpen && (
-          <button
-            disabled={busy}
-            onClick={() => void run(() => liveApi.endQuestion(organizationId, sessionId))}
-          >
-            End question
-          </button>
-        )}
-        {session.status === 'ACTIVE' && !session.questionOpen && (
-          <div className="inlineActions">
-            {question && question.index + 1 < question.total && (
-              <button
-                disabled={busy}
-                onClick={() => void run(() => liveApi.nextQuestion(organizationId, sessionId))}
-              >
-                Next question
-              </button>
-            )}
-            <button
-              className="buttonSecondary"
-              disabled={busy}
-              onClick={() => void run(() => liveApi.finish(organizationId, sessionId))}
-            >
-              Finish
-            </button>
+      <div className="liveGrid">
+        <section className="panel liveStage">
+          <div className="liveStageTop">
+            <div>
+              <p className="liveEyebrow">INVITE YOUR PARTICIPANTS</p>
+              <h2 className="joinCode">Code {session.joinCode}</h2>
+              <p className="liveStageHint">One room. Everyone connected.</p>
+              <a className="joinLink" href={url} target="_blank" rel="noreferrer">
+                Open participant link ↗
+              </a>
+            </div>
+            <div className="hostQr">
+              <QrCode value={url} />
+            </div>
           </div>
-        )}
-        {session.status === 'WAITING' && (
-          <button
-            className="buttonDanger"
-            disabled={busy}
-            onClick={() => void run(() => liveApi.cancel(organizationId, sessionId))}
-          >
-            Cancel
-          </button>
-        )}
-      </section>
-      {question && (
-        <section className="panel" style={{ marginTop: '1rem' }}>
-          <h2>
-            Question {question.index + 1} / {question.total}
-          </h2>
-          <p>{question.text}</p>
-          {session.questionOpen && (
-            <p>
-              {answered} / {people.length} answered
-            </p>
-          )}
-          {results &&
-            results.options.map((option) => (
-              <p key={option.id}>
-                {option.text}: {Math.round(option.percent)}%{option.correct ? ' ✓' : ''}
-              </p>
-            ))}
+          <div className="liveStageFooter">
+            <p>{people.length} participants</p>
+            <div className="inlineActions">
+              {session.status === 'FINISHED' && (
+                <button
+                  className="buttonSecondary"
+                  onClick={() => {
+                    void fetch(
+                      `${API_BASE_URL}/organizations/${organizationId}/live-sessions/${sessionId}/export`,
+                      { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+                    )
+                      .then((response) => response.blob())
+                      .then((blob) => {
+                        const link = document.createElement('a')
+                        link.href = URL.createObjectURL(blob)
+                        link.download = `live-session-${sessionId}.csv`
+                        link.click()
+                      })
+                  }}
+                >
+                  Export results
+                </button>
+              )}
+              {session.status === 'WAITING' && (
+                <button
+                  disabled={busy}
+                  onClick={() => void run(() => liveApi.start(organizationId, sessionId))}
+                >
+                  Start Session
+                </button>
+              )}
+              {session.status === 'ACTIVE' && session.questionOpen && (
+                <button
+                  disabled={busy}
+                  onClick={() => void run(() => liveApi.endQuestion(organizationId, sessionId))}
+                >
+                  End question
+                </button>
+              )}
+              {session.status === 'ACTIVE' && !session.questionOpen && (
+                <div className="inlineActions">
+                  {question && question.index + 1 < question.total && (
+                    <button
+                      disabled={busy}
+                      onClick={() =>
+                        void run(() => liveApi.nextQuestion(organizationId, sessionId))
+                      }
+                    >
+                      Next question
+                    </button>
+                  )}
+                  <button
+                    className="buttonSecondary"
+                    disabled={busy}
+                    onClick={() => void run(() => liveApi.finish(organizationId, sessionId))}
+                  >
+                    Finish
+                  </button>
+                </div>
+              )}
+              {session.status === 'WAITING' && (
+                <button
+                  className="buttonDanger"
+                  disabled={busy}
+                  onClick={() => void run(() => liveApi.cancel(organizationId, sessionId))}
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </div>
         </section>
-      )}
-      <section className="panel" style={{ marginTop: '1rem' }}>
-        <h2>Participants</h2>
-        {people.map((person) => (
-          <div className="listRow" key={person.id}>
-            <strong>{person.displayName}</strong>
-            <small>{person.status}</small>
+        {question && (
+          <section className="panel resultsPanel">
+            <h2>
+              Question {question.index + 1} / {question.total}
+            </h2>
+            <p>{question.text}</p>
+            {session.questionOpen && (
+              <p>
+                {answered} / {people.length} answered
+              </p>
+            )}
+            {results &&
+              results.options.map((option) => (
+                <div className="resultRow" key={option.id}>
+                  <div>
+                    <span>
+                      {option.text}
+                      {option.correct ? ' · Correct answer' : ''}
+                    </span>
+                    <strong>{Math.round(option.percent)}%</strong>
+                  </div>
+                  <meter
+                    min={0}
+                    max={100}
+                    value={option.percent}
+                    aria-label={`${option.text}: ${Math.round(option.percent)} percent`}
+                  />
+                </div>
+              ))}
+          </section>
+        )}
+        <section className="panel participantPanel">
+          <div className="listToolbar">
+            <h2>Participants</h2>
+            <span className="statusPill">{people.length}</span>
           </div>
-        ))}
-      </section>
+          {people.length === 0 && (
+            <p className="panelDescription">Share the code to welcome your first participant.</p>
+          )}
+          {people.map((person) => (
+            <div className="listRow" key={person.id}>
+              <strong>{person.displayName}</strong>
+              <small className="statusPill">{person.status.toLowerCase()}</small>
+            </div>
+          ))}
+        </section>
+      </div>
     </>
   )
 }
