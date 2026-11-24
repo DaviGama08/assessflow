@@ -17,3 +17,10 @@ web/blob-report/
 
 # Local run notes; keep client-specific instructions out of Git.
 cheatsheet.md
+
+# Local diagram toolkit and installation metadata; keep project diagrams tracked.
+/diagram-kit/
+/.diagram-agents-kit/
+
+# Local agent handoff notes.
+/.handoffs/
