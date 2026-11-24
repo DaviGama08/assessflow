@@ -118,6 +118,10 @@ class QuestionBankApiIntegrationTest {
         assertThat(api.send("POST", questionsA, singleChoice, participant).statusCode()).isEqualTo(403);
         assertThat(api.send("GET", questionsA, null, participant).statusCode()).isEqualTo(403);
         assertThat(api.send("GET", categoriesA, null, participant).statusCode()).isEqualTo(403);
+        assertThat(api.send("POST", questionsA + "/starter", null, participant).statusCode()).isEqualTo(403);
+        assertThat(api.send("POST", questionsA + "/starter", null, ownerB).statusCode()).isEqualTo(403);
+        assertThat(api.send("POST", questionsA + "/starter", null, ownerA).body()).isEqualTo("18");
+        assertThat(api.send("POST", questionsA + "/starter", null, ownerA).body()).isEqualTo("0");
         assertThat(api.send("DELETE", categoriesA + "/" + categoryId, null, ownerA).body()).contains("CATEGORY_IN_USE");
     }
 

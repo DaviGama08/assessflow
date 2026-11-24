@@ -71,6 +71,20 @@ class AuthApiIntegrationTest {
         assertThat(send("POST", "/api/v1/auth/logout", null, token(refreshed.body()), newCookie, true).statusCode()).isEqualTo(204);
         assertThat(send("GET", "/api/v1/auth/me", null, token(refreshed.body()), null).statusCode()).isEqualTo(401);
     }
+    @Test
+    void teacherRegistrationRequiresInvitationAndStudentCannotCreateOrganizations() throws Exception {
+        String fields = "\"email\":\"role-test@example.com\",\"password\":\"secure-password-123\",\"displayName\":\"Test\"";
+        String register = "/api/v1/auth/register";
+        for (String code : new String[]{"", ",\"inviteCode\":\"wrong\""}) {
+            var denied = send("POST", register, "{" + fields + ",\"accountType\":\"TEACHER\"" + code + "}", null, null);
+            assertThat(denied.statusCode()).isEqualTo(400);
+            assertThat(denied.body()).contains("INVALID_TEACHER_INVITE");
+        }
+        var student = send("POST", register, "{" + fields + "}", null, null);
+        assertThat(student.body()).contains("\"accountType\":\"STUDENT\"");
+        assertThat(send("POST", "/api/v1/organizations", "{\"name\":\"Test\",\"slug\":\"student-test\"}",
+                token(student.body()), null).statusCode()).isEqualTo(403);
+    }
     private String token(String body) { return body.split("\"accessToken\":\"")[1].split("\"")[0]; }
     private HttpResponse<String> send(String method, String path, String body, String token, String cookie) throws Exception {
         return send(method, path, body, token, cookie, false);

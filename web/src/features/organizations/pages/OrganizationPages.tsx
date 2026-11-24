@@ -9,7 +9,7 @@ function errorText(cause: unknown) {
   return cause instanceof Error ? cause.message : 'The request failed.'
 }
 
-export function OrganizationSelectorPage() {
+export function OrganizationSelectorPage({ isTeacher }: { isTeacher: boolean }) {
   const navigate = useNavigate()
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [name, setName] = useState('')
@@ -46,7 +46,11 @@ export function OrganizationSelectorPage() {
           <div>
             <p className="orgEyebrow">ASSESSFLOW</p>
             <h1>Organizations</h1>
-            <p>Choose a workspace or create one to get started.</p>
+            <p>
+              {isTeacher
+                ? 'Choose a workspace or create one to host a class.'
+                : 'Join a live session with the code from your teacher.'}
+            </p>
           </div>
         </div>
         {error && (
@@ -73,34 +77,41 @@ export function OrganizationSelectorPage() {
         ) : !error ? (
           <p>You are not a member of an organization yet.</p>
         ) : null}
-        <section className="orgPanel">
-          <h2>Create an organization</h2>
-          <p>You will become its owner.</p>
-          <form className="orgForm" onSubmit={create}>
-            <label>
-              Name
-              <input
-                required
-                maxLength={200}
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
-            </label>
-            <label>
-              Slug
-              <input
-                required
-                maxLength={100}
-                value={slug}
-                onChange={(event) => setSlug(event.target.value)}
-                placeholder="my-organization"
-              />
-            </label>
-            <button type="submit" disabled={busy}>
-              Create organization
-            </button>
-          </form>
-        </section>
+        {!isTeacher && (
+          <Link className="orgCard" to="/join">
+            Join a session
+          </Link>
+        )}
+        {isTeacher && (
+          <section className="orgPanel">
+            <h2>Create an organization</h2>
+            <p>You will become its owner.</p>
+            <form className="orgForm" onSubmit={create}>
+              <label>
+                Name
+                <input
+                  required
+                  maxLength={200}
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                />
+              </label>
+              <label>
+                Slug
+                <input
+                  required
+                  maxLength={100}
+                  value={slug}
+                  onChange={(event) => setSlug(event.target.value)}
+                  placeholder="my-organization"
+                />
+              </label>
+              <button type="submit" disabled={busy}>
+                Create organization
+              </button>
+            </form>
+          </section>
+        )}
       </div>
     </main>
   )

@@ -47,6 +47,7 @@ export function DashboardPage() {
           <strong>{data?.memberCount ?? '—'}</strong>
         </article>
       </section>
+      {role === 'PARTICIPANT' && <button onClick={() => navigate('/join')}>Join a session</button>}
       {canManageContent(role) && (
         <div className="inlineActions" style={{ marginTop: '1.5rem' }}>
           <button onClick={() => navigate(`/app/organizations/${organizationId}/assessments`)}>

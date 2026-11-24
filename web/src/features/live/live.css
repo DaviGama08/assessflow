@@ -53,8 +53,9 @@
   flex-shrink: 0;
 }
 .hostQr img {
-  width: 140px;
-  height: 140px;
+  width: clamp(10rem, 19vw, 18rem);
+  max-width: 100%;
+  height: auto;
   display: block;
 }
 .liveStageFooter {
@@ -257,4 +258,11 @@
   .playPage .answerOption[aria-pressed='true'] {
     padding: calc(1rem - 1px);
   }
+}
+
+.liveStageTop > div {
+  min-width: 0;
+}
+.liveStageTop .hostQr {
+  max-width: 100%;
 }

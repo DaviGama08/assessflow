@@ -46,7 +46,7 @@ class AssessmentServiceTest {
         MockitoAnnotations.openMocks(this);
         service = new AssessmentService(repository, links, questions, organizations, access,
                 Clock.fixed(now, ZoneOffset.UTC));
-        actor = new User("owner@example.com", "hash", "Owner", now);
+        actor = new User("owner@example.com", "hash", "Owner", com.davigama.assessflow.identity.domain.AccountType.TEACHER, now);
         organizationId = UUID.randomUUID();
         when(organizations.existsById(organizationId)).thenReturn(true);
     }

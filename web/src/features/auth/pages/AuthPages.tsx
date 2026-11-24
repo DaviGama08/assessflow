@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { authApi, type User } from '../api/auth'
+import { authApi, type AccountType, type User } from '../api/auth'
 import './auth.css'
 
 type Props = { onAuthenticated: (user: User) => void }
@@ -56,6 +56,8 @@ export function LoginPage({ onAuthenticated }: Props) {
 }
 
 export function RegisterPage({ onAuthenticated }: Props) {
+  const [accountType, setAccountType] = useState<AccountType>('STUDENT')
+  const [inviteCode, setInviteCode] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -66,7 +68,17 @@ export function RegisterPage({ onAuthenticated }: Props) {
     setBusy(true)
     setError('')
     try {
-      onAuthenticated((await authApi.register(email, password, displayName)).user)
+      onAuthenticated(
+        (
+          await authApi.register(
+            email,
+            password,
+            displayName,
+            accountType,
+            accountType === 'TEACHER' ? inviteCode : undefined,
+          )
+        ).user,
+      )
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Registration failed.')
     } finally {
@@ -77,6 +89,28 @@ export function RegisterPage({ onAuthenticated }: Props) {
     <main className="authPage">
       <form className="authCard" onSubmit={submit}>
         <h1>Create an account</h1>
+        <label>
+          Account type
+          <select
+            value={accountType}
+            onChange={(event) => setAccountType(event.target.value as AccountType)}
+          >
+            <option value="STUDENT">Student</option>
+            <option value="TEACHER">Teacher</option>
+          </select>
+        </label>
+        {accountType === 'TEACHER' && (
+          <label>
+            Teacher invitation code
+            <input
+              type="password"
+              required
+              value={inviteCode}
+              onChange={(event) => setInviteCode(event.target.value)}
+            />
+            <small>Ask your administrator for this code.</small>
+          </label>
+        )}
         <label>
           Name
           <input

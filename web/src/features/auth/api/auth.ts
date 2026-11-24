@@ -1,7 +1,15 @@
 import { API_BASE_URL } from '../../../config/env'
 
-export type User = { id: string; email: string; displayName: string; status: string }
+export type AccountType = 'TEACHER' | 'STUDENT'
+export type User = {
+  id: string
+  email: string
+  displayName: string
+  status: string
+  accountType: AccountType
+}
 type Session = { accessToken: string; user: User }
+let pendingRefresh: Promise<Session> | null = null
 let accessToken: string | null = null
 export const getAccessToken = () => accessToken
 
@@ -21,10 +29,20 @@ async function post(path: string, body?: object): Promise<Session> {
   return session
 }
 export const authApi = {
-  register: (email: string, password: string, displayName: string) =>
-    post('register', { email, password, displayName }),
+  register: (
+    email: string,
+    password: string,
+    displayName: string,
+    accountType: AccountType,
+    inviteCode?: string,
+  ) => post('register', { email, password, displayName, accountType, inviteCode }),
   login: (email: string, password: string) => post('login', { email, password }),
-  refresh: () => post('refresh'),
+  refresh: () => {
+    pendingRefresh ??= post('refresh').finally(() => {
+      pendingRefresh = null
+    })
+    return pendingRefresh
+  },
   async logout() {
     try {
       await fetch(`${API_BASE_URL}/auth/logout`, {

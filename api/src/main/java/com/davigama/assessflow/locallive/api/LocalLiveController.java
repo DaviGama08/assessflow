@@ -1,7 +1,6 @@
 package com.davigama.assessflow.locallive.api;
 
 import com.davigama.assessflow.identity.domain.User;
-import com.davigama.assessflow.locallive.api.LocalLiveDtos.HotspotResponse;
 import com.davigama.assessflow.locallive.api.LocalLiveDtos.PackageImportResponse;
 import com.davigama.assessflow.locallive.api.LocalLiveDtos.StatusResponse;
 import com.davigama.assessflow.locallive.api.dto.AssessmentPackageV1;
@@ -38,21 +37,6 @@ public class LocalLiveController {
     @GetMapping("/join-url/{code}")
     public Map<String, String> joinUrl(@PathVariable String code) {
         return Map.of("url", localLive.joinUrl(code));
-    }
-
-    @GetMapping("/hotspot")
-    public HotspotResponse hotspot() {
-        return localLive.hotspot();
-    }
-
-    @PostMapping("/hotspot/start")
-    public HotspotResponse startHotspot() {
-        return localLive.startHotspot();
-    }
-
-    @PostMapping("/hotspot/stop")
-    public HotspotResponse stopHotspot() {
-        return localLive.stopHotspot();
     }
 
     @PostMapping("/packages")

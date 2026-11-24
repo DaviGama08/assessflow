@@ -15,8 +15,15 @@ public class User {
     @Column(name = "created_at", nullable = false) private Instant createdAt;
     @Column(name = "updated_at", nullable = false) private Instant updatedAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_type", nullable = false, length = 20)
+    private AccountType accountType;
+
+    public AccountType getAccountType() { return accountType; }
+
     protected User() {}
-    public User(String email, String passwordHash, String displayName, Instant now) {
+    public User(String email, String passwordHash, String displayName, AccountType accountType, Instant now) {
+        this.accountType = accountType;
         this.id = UUID.randomUUID();
         this.email = email.trim().toLowerCase(java.util.Locale.ROOT);
         this.passwordHash = passwordHash;

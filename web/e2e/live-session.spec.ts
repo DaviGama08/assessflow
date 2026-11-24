@@ -13,7 +13,13 @@ test('host and guest can run a live session in the browser', async ({ page, requ
   const password = 'secure-password-123'
   const session = await json(
     await request.post(`${api}/auth/register`, {
-      data: { email, password, displayName: 'E2E Host' },
+      data: {
+        email,
+        password,
+        displayName: 'E2E Host',
+        accountType: 'TEACHER',
+        inviteCode: process.env.APP_TEACHER_INVITE_CODE,
+      },
     }),
   )
   const auth = { Authorization: `Bearer ${session.accessToken}` }

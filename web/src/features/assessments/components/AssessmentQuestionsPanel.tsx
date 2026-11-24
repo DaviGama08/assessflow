@@ -1,9 +1,14 @@
+import type { ReactNode } from 'react'
 import type { AssessmentQuestion } from '../types/assessment'
 import type { Question } from '../../questions/types'
 
 type Props = {
   items: AssessmentQuestion[]
   bank: Question[]
+  libraryTools?: ReactNode
+  libraryFooter?: ReactNode
+  loading?: boolean
+  readOnly?: boolean
   busy?: boolean
   onAdd: (questionId: string, points: number) => void
   onRemove: (questionId: string) => void
@@ -14,6 +19,10 @@ type Props = {
 export function AssessmentQuestionsPanel({
   items,
   bank,
+  libraryTools,
+  libraryFooter,
+  loading,
+  readOnly,
   busy,
   onAdd,
   onRemove,
@@ -47,68 +56,80 @@ export function AssessmentQuestionsPanel({
                 </small>
               </div>
             </div>
-            <div className="questionControls">
-              <label>
-                Points
-                <input
-                  type="number"
-                  min={1}
-                  value={item.points}
-                  aria-label={`Points for ${item.questionText}`}
-                  onChange={(event) => onPoints(item.questionId, Number(event.target.value))}
-                />
-              </label>
-              <button
-                className="buttonSecondary"
-                disabled={busy || index === 0}
-                onClick={() => onMove(item.questionId, -1)}
-              >
-                Up
-              </button>
-              <button
-                className="buttonSecondary"
-                disabled={busy || index === items.length - 1}
-                onClick={() => onMove(item.questionId, 1)}
-              >
-                Down
-              </button>
-              <button
-                className="buttonDanger"
-                disabled={busy}
-                onClick={() => onRemove(item.questionId)}
-              >
-                Remove
-              </button>
-            </div>
+            {readOnly ? (
+              <small>{item.points} pts</small>
+            ) : (
+              <div className="questionControls">
+                <label>
+                  Points
+                  <input
+                    type="number"
+                    min={1}
+                    value={item.points}
+                    aria-label={`Points for ${item.questionText}`}
+                    onChange={(event) => onPoints(item.questionId, Number(event.target.value))}
+                  />
+                </label>
+                <button
+                  className="buttonSecondary"
+                  disabled={busy || index === 0}
+                  onClick={() => onMove(item.questionId, -1)}
+                >
+                  Up
+                </button>
+                <button
+                  className="buttonSecondary"
+                  disabled={busy || index === items.length - 1}
+                  onClick={() => onMove(item.questionId, 1)}
+                >
+                  Down
+                </button>
+                <button
+                  className="buttonDanger"
+                  disabled={busy}
+                  onClick={() => onRemove(item.questionId)}
+                >
+                  Remove
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>
-      <aside className="questionLibrary">
-        <h3>Question bank</h3>
-        <p className="panelDescription">Add a question to this assessment.</p>
-        {available.length === 0 ? (
-          <p>No additional questions are available.</p>
-        ) : (
-          available.map((question) => (
-            <div className="listRow" key={question.id}>
-              <div>
-                <strong>{question.text}</strong>
-                <small>
-                  {question.type.replaceAll('_', ' ').toLowerCase()} ·{' '}
-                  {question.difficulty.toLowerCase()}
-                </small>
+      {!readOnly && (
+        <aside className="questionLibrary">
+          <h3>Question bank</h3>
+          <p className="panelDescription">Add a question to this assessment.</p>
+          {libraryTools}
+          {loading ? (
+            <p>Loading questions…</p>
+          ) : available.length === 0 ? (
+            <p>
+              No available questions on this page. Open the bank to create or activate a question.
+            </p>
+          ) : (
+            available.map((question) => (
+              <div className="listRow" key={question.id}>
+                <div>
+                  <strong>{question.text}</strong>
+                  <small>
+                    {question.type.replaceAll('_', ' ').toLowerCase()} ·{' '}
+                    {question.difficulty.toLowerCase()}
+                  </small>
+                </div>
+                <button
+                  className="buttonSecondary"
+                  disabled={busy}
+                  onClick={() => onAdd(question.id, 1)}
+                >
+                  Add
+                </button>
               </div>
-              <button
-                className="buttonSecondary"
-                disabled={busy}
-                onClick={() => onAdd(question.id, 1)}
-              >
-                Add
-              </button>
-            </div>
-          ))
-        )}
-      </aside>
+            ))
+          )}
+          {libraryFooter}
+        </aside>
+      )}
     </div>
   )
 }

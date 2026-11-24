@@ -17,7 +17,7 @@ public final class ApiSupport {
 
     public String register(String email) throws Exception {
         var response = send("POST", "/api/v1/auth/register",
-                "{\"email\":\"" + email + "\",\"password\":\"secure-password-123\",\"displayName\":\"Test User\"}",
+                "{\"email\":\"" + email + "\",\"password\":\"secure-password-123\",\"displayName\":\"Test User\",\"accountType\":\"TEACHER\",\"inviteCode\":\"integration-test-invite\"}",
                 null);
         if (response.statusCode() != 200) {
             throw new AssertionError("register failed: " + response.body());

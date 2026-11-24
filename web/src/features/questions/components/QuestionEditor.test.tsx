@@ -9,6 +9,8 @@ describe('QuestionEditor', () => {
     const user = userEvent.setup()
     render(
       <QuestionEditor
+        organizationId="org-1"
+        onCategoryCreated={() => undefined}
         categories={[
           { id: 'cat-1', organizationId: 'org-1', name: 'Core', slug: 'core', createdAt: '' },
         ]}

@@ -8,10 +8,9 @@ type Props = {
   page: number
   onPageChange: (page: number) => void
   onOpen: (id: string) => void
-  onCreate: () => void
 }
 
-export function AssessmentList({ data, loading, page, onPageChange, onOpen, onCreate }: Props) {
+export function AssessmentList({ data, loading, page, onPageChange, onOpen }: Props) {
   return (
     <section className={styles.panel}>
       <div className={styles.listHead}>
@@ -88,7 +87,6 @@ export function AssessmentList({ data, loading, page, onPageChange, onOpen, onCr
           <div className={styles.emptyIcon}>▦</div>
           <h3>No assessments yet</h3>
           <p>Create your first assessment to get started.</p>
-          <button onClick={onCreate}>Create assessment</button>
         </div>
       )}
     </section>

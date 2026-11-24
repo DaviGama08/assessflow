@@ -20,7 +20,7 @@
 The platform supports two execution modes:
 
 - **Cloud Live**, with hosts and participants connected through the public internet
-- **Local Live**, with the same product running on a laptop LAN or hotspot without requiring internet access
+- **Local Live**, with the same product running on a shared local network without requiring internet access
 
 Organizations isolate tenants. Authors maintain question banks and build assessments. Instructors launch live sessions with join codes and QR codes, while participants receive real-time updates through WebSocket connections.
 
@@ -89,7 +89,6 @@ Local Live uses the same application with:
 - PostgreSQL on localhost
 - the simple STOMP broker
 - LAN join URLs
-- optional local hotspot networking
 
 ## Technology Stack
 
@@ -147,6 +146,21 @@ OpenAPI:
 ```text
 http://localhost:8080/swagger-ui/index.html
 ```
+
+### Teacher and student accounts
+
+Students can register and use **Join a session** with a code from their teacher.
+To enable teacher registration, set a private `APP_TEACHER_INVITE_CODE` in the
+root `.env` and restart the local API. Share this reusable code with teachers.
+Teachers can create organizations and assign roles to registered members.
+Accounts with an existing active owner, admin or instructor membership retain
+teacher access when the database is upgraded.
+
+For local testing, fill in the two test emails and passwords in `.env`, set
+`APP_LOCAL_DEMO_ACCOUNTS=true`, and restart the API. Use **Sign in** for these
+accounts. Startup creates missing accounts and preserves existing passwords.
+Use a private browser window for the second login because cookies are shared
+across ports on the same host.
 
 ## Testing and Quality
 

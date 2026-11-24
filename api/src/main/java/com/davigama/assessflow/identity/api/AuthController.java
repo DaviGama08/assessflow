@@ -2,6 +2,7 @@ package com.davigama.assessflow.identity.api;
 
 import com.davigama.assessflow.identity.application.AuthException;
 import com.davigama.assessflow.identity.application.AuthService;
+import com.davigama.assessflow.identity.domain.AccountType;
 import com.davigama.assessflow.identity.domain.User;
 import com.davigama.assessflow.shared.config.RefreshCookieSettings;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,11 +21,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
     public record RegisterRequest(@NotBlank String email, @NotBlank String password,
-                                  @NotBlank @Size(max = 200) String displayName) {}
+                                  @NotBlank @Size(max = 200) String displayName, AccountType accountType, String inviteCode) {}
     public record LoginRequest(@NotBlank String email, @NotBlank String password) {}
-    public record UserResponse(UUID id, String email, String displayName, String status) {
+    public record UserResponse(UUID id, String email, String displayName, String status, AccountType accountType) {
         public static UserResponse from(User user) {
-            return new UserResponse(user.getId(), user.getEmail(), user.getDisplayName(), user.getStatus().name());
+            return new UserResponse(user.getId(), user.getEmail(), user.getDisplayName(), user.getStatus().name(), user.getAccountType());
         }
     }
     public record AuthResponse(String accessToken, UserResponse user) {}
@@ -44,7 +45,7 @@ public class AuthController {
             throw new AuthException("INVALID_REQUEST", "Invalid email address.");
         if (request.password().length() < 12)
             throw new AuthException("INVALID_REQUEST", "Password must contain at least 12 characters.");
-        return response(service.register(email, request.password(), request.displayName()));
+        return response(service.register(email, request.password(), request.displayName(), request.accountType(), request.inviteCode()));
     }
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {

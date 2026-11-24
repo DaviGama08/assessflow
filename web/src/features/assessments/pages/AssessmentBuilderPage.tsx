@@ -1,11 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { assessmentsApi } from '../api/assessments'
 import { liveApi } from '../../live/api/live'
 import { questionsApi } from '../../questions/api/questions'
 import { AssessmentQuestionsPanel } from '../components/AssessmentQuestionsPanel'
 import type { Assessment, AssessmentQuestion } from '../types/assessment'
-import type { Question } from '../../questions/types'
+import type { QuestionPage } from '../../questions/types'
 
 type Tab = 'general' | 'questions' | 'settings'
 
@@ -20,7 +20,9 @@ export function AssessmentBuilderPage({
   const [tab, setTab] = useState<Tab>('general')
   const [assessment, setAssessment] = useState<Assessment | null>(null)
   const [items, setItems] = useState<AssessmentQuestion[]>([])
-  const [bank, setBank] = useState<Question[]>([])
+  const [bank, setBank] = useState<QuestionPage | null>(null)
+  const [bankPage, setBankPage] = useState(0)
+  const [search, setSearch] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [title, setTitle] = useState('')
@@ -33,14 +35,12 @@ export function AssessmentBuilderPage({
   const [showResultsAfterCompletion, setShowResultsAfterCompletion] = useState(true)
 
   async function reload() {
-    const [nextAssessment, nextItems, nextBank] = await Promise.all([
+    const [nextAssessment, nextItems] = await Promise.all([
       assessmentsApi.get(organizationId, assessmentId),
       assessmentsApi.questions(organizationId, assessmentId),
-      questionsApi.list(organizationId, { size: 100, status: 'ACTIVE' }),
     ])
     setAssessment(nextAssessment)
     setItems(nextItems)
-    setBank(nextBank.content)
     setTitle(nextAssessment.title)
     setDescription(nextAssessment.description ?? '')
     setTimeLimitMinutes(nextAssessment.timeLimitMinutes?.toString() ?? '')
@@ -57,6 +57,24 @@ export function AssessmentBuilderPage({
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reload is recreated each render
   }, [organizationId, assessmentId])
+
+  useEffect(() => {
+    if (tab !== 'questions') return
+    let current = true
+    setBank(null)
+    questionsApi
+      .list(organizationId, { status: 'ACTIVE', page: bankPage, search })
+      .then((result) => {
+        if (current) setBank(result)
+      })
+      .catch((cause) => {
+        if (current)
+          setError(cause instanceof Error ? cause.message : 'Could not load the question bank.')
+      })
+    return () => {
+      current = false
+    }
+  }, [organizationId, bankPage, search, tab])
 
   async function publish() {
     setBusy(true)
@@ -204,8 +222,11 @@ export function AssessmentBuilderPage({
         </div>
         <div className="inlineActions">
           {assessment?.status === 'DRAFT' && (
-            <button disabled={busy} onClick={() => void publish()}>
-              Publish
+            <button
+              disabled={busy}
+              onClick={() => (items.length ? void publish() : setTab('questions'))}
+            >
+              {items.length ? 'Publish' : 'Choose questions'}
             </button>
           )}
           {assessment?.status === 'PUBLISHED' && (
@@ -276,101 +297,143 @@ export function AssessmentBuilderPage({
         aria-labelledby={`assessment-tab-${tab}`}
       >
         {tab === 'questions' ? (
-          <AssessmentQuestionsPanel
-            items={items}
-            bank={bank}
-            busy={busy}
-            onAdd={(id, value) => void add(id, value)}
-            onRemove={(id) => void remove(id)}
-            onPoints={(id, value) => void points(id, value)}
-            onMove={(id, direction) => void move(id, direction)}
-          />
+          <>
+            <AssessmentQuestionsPanel
+              items={items}
+              bank={bank?.content ?? []}
+              readOnly={assessment?.status === 'ARCHIVED'}
+              libraryTools={
+                <>
+                  <label>
+                    Search active questions
+                    <input
+                      value={search}
+                      onChange={(event) => {
+                        setSearch(event.target.value)
+                        setBankPage(0)
+                      }}
+                    />
+                  </label>
+                  <Link to={`/app/organizations/${organizationId}/questions`}>
+                    Open question bank
+                  </Link>
+                </>
+              }
+              libraryFooter={
+                bank &&
+                bank.totalPages > 1 && (
+                  <div className="inlineActions">
+                    <button disabled={bank.first} onClick={() => setBankPage((p) => p - 1)}>
+                      Previous
+                    </button>
+                    <span>
+                      {bank.number + 1} / {bank.totalPages}
+                    </span>
+                    <button disabled={bank.last} onClick={() => setBankPage((p) => p + 1)}>
+                      Next
+                    </button>
+                  </div>
+                )
+              }
+              loading={!bank}
+              busy={busy}
+              onAdd={(id, value) => void add(id, value)}
+              onRemove={(id) => void remove(id)}
+              onPoints={(id, value) => void points(id, value)}
+              onMove={(id, direction) => void move(id, direction)}
+            />
+          </>
         ) : (
-          <form className="formGrid" onSubmit={save}>
-            {tab === 'general' && (
-              <>
-                <label>
-                  Title
-                  <input
-                    required
-                    maxLength={200}
-                    value={title}
-                    onChange={(event) => setTitle(event.target.value)}
-                  />
-                </label>
-                <label>
-                  Description
-                  <textarea
-                    maxLength={2000}
-                    rows={5}
-                    value={description}
-                    onChange={(event) => setDescription(event.target.value)}
-                  />
-                </label>
-              </>
-            )}
-            {tab === 'settings' && (
-              <>
-                <label>
-                  Time limit (minutes)
-                  <input
-                    type="number"
-                    min={1}
-                    value={timeLimitMinutes}
-                    onChange={(event) => setTimeLimitMinutes(event.target.value)}
-                  />
-                </label>
-                <label>
-                  Maximum attempts
-                  <input
-                    type="number"
-                    min={1}
-                    required
-                    value={maxAttempts}
-                    onChange={(event) => setMaxAttempts(event.target.value)}
-                  />
-                </label>
-                <label>
-                  Passing score (0-100)
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={passingScore}
-                    onChange={(event) => setPassingScore(event.target.value)}
-                  />
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={shuffleQuestions}
-                    onChange={(event) => setShuffleQuestions(event.target.checked)}
-                  />
-                  Shuffle questions
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={shuffleAnswers}
-                    onChange={(event) => setShuffleAnswers(event.target.checked)}
-                  />
-                  Shuffle answers
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={showResultsAfterCompletion}
-                    onChange={(event) => setShowResultsAfterCompletion(event.target.checked)}
-                  />
-                  Show results after completion
-                </label>
-              </>
-            )}
-            <div>
-              <button disabled={busy} type="submit">
-                {busy ? 'Saving…' : 'Save'}
-              </button>
-            </div>
+          <form onSubmit={save}>
+            <fieldset
+              className="formGrid assessmentFields"
+              disabled={busy || assessment?.status === 'ARCHIVED'}
+            >
+              {tab === 'general' && (
+                <>
+                  <label>
+                    Title
+                    <input
+                      required
+                      maxLength={200}
+                      value={title}
+                      onChange={(event) => setTitle(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    Description
+                    <textarea
+                      maxLength={2000}
+                      rows={5}
+                      value={description}
+                      onChange={(event) => setDescription(event.target.value)}
+                    />
+                  </label>
+                </>
+              )}
+              {tab === 'settings' && (
+                <>
+                  <label>
+                    Time limit (minutes)
+                    <input
+                      type="number"
+                      min={1}
+                      value={timeLimitMinutes}
+                      onChange={(event) => setTimeLimitMinutes(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    Maximum attempts
+                    <input
+                      type="number"
+                      min={1}
+                      required
+                      value={maxAttempts}
+                      onChange={(event) => setMaxAttempts(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    Passing score (0-100)
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={passingScore}
+                      onChange={(event) => setPassingScore(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={shuffleQuestions}
+                      onChange={(event) => setShuffleQuestions(event.target.checked)}
+                    />
+                    Shuffle questions
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={shuffleAnswers}
+                      onChange={(event) => setShuffleAnswers(event.target.checked)}
+                    />
+                    Shuffle answers
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={showResultsAfterCompletion}
+                      onChange={(event) => setShowResultsAfterCompletion(event.target.checked)}
+                    />
+                    Show results after completion
+                  </label>
+                </>
+              )}
+              <div>
+                <button disabled={busy} type="submit">
+                  {busy ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+            </fieldset>
           </form>
         )}
       </section>

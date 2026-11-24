@@ -96,7 +96,7 @@ class OrganizationApiIntegrationTest {
     }
     private String register(String email) throws Exception {
         var response = send("POST", "/api/v1/auth/register",
-                "{\"email\":\"" + email + "\",\"password\":\"secure-password-123\",\"displayName\":\"Test User\"}", null);
+                "{\"email\":\"" + email + "\",\"password\":\"secure-password-123\",\"displayName\":\"Test User\",\"accountType\":\"TEACHER\",\"inviteCode\":\"integration-test-invite\"}", null);
         assertThat(response.statusCode()).isEqualTo(200);
         return field(response.body(), "accessToken");
     }

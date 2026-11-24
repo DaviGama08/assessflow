@@ -1,5 +1,6 @@
 package com.davigama.assessflow.organization.application;
 
+import com.davigama.assessflow.identity.domain.AccountType;
 import com.davigama.assessflow.identity.domain.User;
 import com.davigama.assessflow.identity.infrastructure.UserRepository;
 import com.davigama.assessflow.organization.domain.*;
@@ -34,6 +35,8 @@ public class OrganizationService {
     }
     @Transactional
     public Organization create(User actor, String name, String suppliedSlug) {
+        if (actor.getAccountType() != AccountType.TEACHER)
+            throw new OrganizationException(HttpStatus.FORBIDDEN, "TEACHER_REQUIRED", "Only teachers can create organizations.");
         String slug = Slug.normalize(suppliedSlug);
         if (organizations.existsBySlug(slug)) throw duplicateSlug();
         Organization organization = new Organization(name, slug, clock.instant());
@@ -78,6 +81,7 @@ public class OrganizationService {
         User user = users.findByEmail(email.trim().toLowerCase(Locale.ROOT))
                 .orElseThrow(() -> new OrganizationException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND",
                         "User not found."));
+        requireEligible(user, role);
         OrganizationMember member = members.findByOrganizationIdAndUserId(organizationId, user.getId()).orElse(null);
         if (member != null) {
             if (member.getStatus() == MemberStatus.ACTIVE)
@@ -95,6 +99,7 @@ public class OrganizationService {
         OrganizationMember target = activeTarget(organizationId, memberId);
         access.requireCanChange(manager, target, role);
         if (target.getRole() == MemberRole.OWNER && role != MemberRole.OWNER) requireAnotherOwner(organizationId);
+        requireEligible(target.getUser(), role);
         target.changeRole(role);
         return target;
     }
@@ -106,6 +111,11 @@ public class OrganizationService {
         access.requireCanRemove(manager, target);
         if (target.getRole() == MemberRole.OWNER) requireAnotherOwner(organizationId);
         target.disable();
+    }
+    private void requireEligible(User user, MemberRole role) {
+        if (role != MemberRole.PARTICIPANT && user.getAccountType() != AccountType.TEACHER)
+            throw new OrganizationException(HttpStatus.BAD_REQUEST, "TEACHER_REQUIRED",
+                    "Student accounts can only be assigned the participant role.");
     }
     private Organization find(UUID id) {
         return organizations.findById(id).orElseThrow(() ->

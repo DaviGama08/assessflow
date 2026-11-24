@@ -23,7 +23,8 @@
   gap: 0.4rem;
   font-weight: 600;
 }
-.authCard input {
+.authCard input,
+.authCard select {
   width: 100%;
   padding: 0.8rem;
   border: 1px solid #b8c4d9;

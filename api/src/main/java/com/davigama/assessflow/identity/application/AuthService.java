@@ -1,5 +1,6 @@
 package com.davigama.assessflow.identity.application;
 
+import com.davigama.assessflow.identity.domain.AccountType;
 import com.davigama.assessflow.identity.domain.AuthToken;
 import com.davigama.assessflow.identity.domain.User;
 import com.davigama.assessflow.identity.domain.UserStatus;
@@ -28,14 +29,22 @@ public class AuthService {
     private final PasswordEncoder passwords;
     private final Clock clock;
 
-    public AuthService(UserRepository users, AuthTokenRepository tokens, PasswordEncoder passwords, Clock clock) {
+    private final String teacherInvite;
+
+    public AuthService(UserRepository users, AuthTokenRepository tokens, PasswordEncoder passwords, Clock clock,
+                       @org.springframework.beans.factory.annotation.Value("${APP_TEACHER_INVITE_CODE:}") String teacherInvite) {
+        this.teacherInvite = teacherInvite;
         this.users = users; this.tokens = tokens; this.passwords = passwords; this.clock = clock;
     }
     @Transactional
-    public Session register(String email, String password, String displayName) {
+    public Session register(String email, String password, String displayName, AccountType accountType, String inviteCode) {
+        if (accountType == AccountType.TEACHER && (teacherInvite.isBlank() || inviteCode == null ||
+                !MessageDigest.isEqual(teacherInvite.getBytes(StandardCharsets.UTF_8), inviteCode.getBytes(StandardCharsets.UTF_8)))) {
+            throw new AuthException("INVALID_TEACHER_INVITE", "Ask your administrator for a valid teacher invitation code.");
+        }
         String normalized = email.trim().toLowerCase(Locale.ROOT);
         if (users.existsByEmail(normalized)) throw new AuthException("EMAIL_ALREADY_REGISTERED", "Email is already registered.");
-        User user = new User(normalized, passwords.encode(password), displayName, clock.instant());
+        User user = new User(normalized, passwords.encode(password), displayName, accountType == null ? AccountType.STUDENT : accountType, clock.instant());
         try { users.saveAndFlush(user); }
         catch (DataIntegrityViolationException ex) {
             throw new AuthException("EMAIL_ALREADY_REGISTERED", "Email is already registered.");

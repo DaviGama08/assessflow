@@ -1,14 +1,18 @@
 import { useMemo, useState, type FormEvent } from 'react'
+import { CategoryCreator } from './CategoryCreator'
 import type {
   AnswerOption,
   QuestionCategory,
   QuestionDifficulty,
   QuestionInput,
   QuestionType,
+  QuestionStatus,
 } from '../types'
 
 type Props = {
   initial?: QuestionInput
+  organizationId: string
+  onCategoryCreated: (category: QuestionCategory) => void
   categories: QuestionCategory[]
   busy?: boolean
   submitLabel: string
@@ -20,6 +24,8 @@ const emptyOption = (): AnswerOption => ({ text: '', correct: false })
 
 export function QuestionEditor({
   initial,
+  organizationId,
+  onCategoryCreated,
   categories,
   busy,
   submitLabel,
@@ -30,6 +36,8 @@ export function QuestionEditor({
   const [type, setType] = useState<QuestionType>(initial?.type ?? 'SINGLE_CHOICE')
   const [difficulty, setDifficulty] = useState<QuestionDifficulty>(initial?.difficulty ?? 'MEDIUM')
   const [categoryId, setCategoryId] = useState(initial?.categoryId ?? categories[0]?.id ?? '')
+  const [addingCategory, setAddingCategory] = useState(categories.length === 0)
+  const [status, setStatus] = useState<QuestionStatus>(initial?.status ?? 'ACTIVE')
   const [explanation, setExplanation] = useState(initial?.explanation ?? '')
   const [options, setOptions] = useState<AnswerOption[]>(
     initial?.options?.length
@@ -55,8 +63,8 @@ export function QuestionEditor({
     setType(next)
     if (next === 'TRUE_FALSE') {
       setOptions([
-        { text: options[0]?.text || 'True', correct: true },
-        { text: options[1]?.text || 'False', correct: false },
+        { text: 'True', correct: true },
+        { text: 'False', correct: false },
       ])
     }
   }
@@ -84,6 +92,11 @@ export function QuestionEditor({
       setError('A category is required.')
       return
     }
+    const correctCount = options.filter((option) => option.correct).length
+    if (correctCount === 0 || (!multiple && correctCount !== 1)) {
+      setError(optionHint)
+      return
+    }
     try {
       setError('')
       await onSubmit({
@@ -91,6 +104,7 @@ export function QuestionEditor({
         type,
         difficulty,
         categoryId,
+        status,
         explanation,
         options: options.map((option, index) => ({
           text: option.text,
@@ -143,6 +157,31 @@ export function QuestionEditor({
               {category.name}
             </option>
           ))}
+        </select>
+      </label>
+      {addingCategory ? (
+        <CategoryCreator
+          organizationId={organizationId}
+          onCreated={(category) => {
+            onCategoryCreated(category)
+            setCategoryId(category.id)
+            setAddingCategory(false)
+          }}
+        />
+      ) : (
+        <button type="button" className="buttonSecondary" onClick={() => setAddingCategory(true)}>
+          New category
+        </button>
+      )}
+      <label>
+        Availability
+        <select
+          value={status}
+          onChange={(event) => setStatus(event.target.value as QuestionStatus)}
+        >
+          <option value="ACTIVE">Active — available for assessments</option>
+          <option value="DRAFT">Draft</option>
+          {initial?.status === 'ARCHIVED' && <option value="ARCHIVED">Archived</option>}
         </select>
       </label>
       <label>

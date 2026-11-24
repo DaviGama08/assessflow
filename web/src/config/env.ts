@@ -1,5 +1,9 @@
-const devApi = 'http://localhost:8080/api/v1'
-const devWs = 'ws://localhost:8080/ws'
+const devHost =
+  typeof window !== 'undefined' && window.location.hostname === '127.0.0.1'
+    ? '127.0.0.1'
+    : 'localhost'
+const devApi = `http://${devHost}:8080/api/v1`
+const devWs = `ws://${devHost}:8080/ws`
 
 export function assertCloudProductionEnv(env: {
   PROD: boolean

@@ -87,7 +87,6 @@ export function AssessmentsPage({ organizationId }: { organizationId: string }) 
         page={page}
         onPageChange={setPage}
         onOpen={(id) => navigate(`/app/organizations/${organizationId}/assessments/${id}`)}
-        onCreate={() => undefined}
       />
     </>
   )

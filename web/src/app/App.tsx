@@ -1,4 +1,12 @@
-import { Navigate, Outlet, Route, Routes, useNavigate, useParams } from 'react-router-dom'
+import {
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useParams,
+} from 'react-router-dom'
 import { GuestOnly, RequireAuth, RequireOrganizationRole } from './guards'
 import { useAuth } from '../features/auth/AuthContext'
 import { LoginPage, RegisterPage } from '../features/auth/pages/AuthPages'
@@ -14,7 +22,6 @@ import { DashboardPage } from '../features/workspace/DashboardPage'
 import { OrganizationProvider } from '../features/workspace/OrganizationContext'
 import { SettingsPage } from '../features/workspace/SettingsPage'
 import { HostLivePage } from '../features/live/pages/HostLivePage'
-import { LocalLivePage } from '../features/live/pages/LocalLivePage'
 import { JoinCodePage, JoinPage } from '../features/live/pages/JoinPages'
 import { ParticipantPlayPage } from '../features/live/pages/ParticipantPlayPage'
 import { WorkspaceLayout } from '../features/workspace/WorkspaceLayout'
@@ -122,11 +129,15 @@ function ParamHostLivePage() {
 }
 
 export function App() {
-  const { signIn } = useAuth()
+  const { signIn, user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   function authenticated(user: Parameters<typeof signIn>[0]) {
     signIn(user)
-    void navigate('/app', { replace: true })
+    const from = location.state?.from
+    void navigate(typeof from === 'string' && from.startsWith('/app/') ? from : '/app', {
+      replace: true,
+    })
   }
   return (
     <Routes>
@@ -151,7 +162,10 @@ export function App() {
       <Route path="/play/:sessionId" element={<ParticipantPlayPage />} />
       <Route element={<RequireAuth />}>
         <Route element={<AuthenticatedShell />}>
-          <Route path="/app" element={<OrganizationSelectorPage />} />
+          <Route
+            path="/app"
+            element={<OrganizationSelectorPage isTeacher={user?.accountType === 'TEACHER'} />}
+          />
         </Route>
         <Route path="/app/organizations/:organizationId" element={<WorkspaceRoutes />}>
           <Route index element={<DashboardPage />} />
@@ -164,11 +178,7 @@ export function App() {
           <Route path="live-sessions/:sessionId" element={<ParamHostLivePage />} />
           <Route
             path="local-live"
-            element={
-              <RequireOrganizationRole roles={[...contentRoles]}>
-                <LocalLivePage />
-              </RequireOrganizationRole>
-            }
+            element={<Navigate to="../assessments" relative="path" replace />}
           />
         </Route>
       </Route>

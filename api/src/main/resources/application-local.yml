@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: "optional:file:../.env[.properties],optional:file:./.env[.properties]"
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:55432/assessflow}
     username: ${DB_USERNAME:assessflow_local}
@@ -11,7 +13,7 @@ app:
   api-docs:
     enabled: true
   cors:
-    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174}
   realtime:
     broker-mode: simple
   redis:

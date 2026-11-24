@@ -9,6 +9,7 @@ import com.davigama.assessflow.questionbank.application.QuestionService;
 import com.davigama.assessflow.questionbank.domain.QuestionDifficulty;
 import com.davigama.assessflow.questionbank.domain.QuestionStatus;
 import com.davigama.assessflow.questionbank.domain.QuestionType;
+import com.davigama.assessflow.questionbank.application.StarterQuestions;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -34,8 +35,16 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class QuestionController {
     private final QuestionService service;
 
-    public QuestionController(QuestionService service) {
+    private final StarterQuestions starter;
+
+    public QuestionController(QuestionService service, StarterQuestions starter) {
+        this.starter = starter;
         this.service = service;
+    }
+
+    @PostMapping("/starter")
+    public int installStarter(@PathVariable UUID organizationId, Authentication authentication) {
+        return starter.install(current(authentication), organizationId);
     }
 
     @PostMapping

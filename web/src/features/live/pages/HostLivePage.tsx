@@ -2,8 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { API_BASE_URL } from '../../../config/env'
 import { getAccessToken } from '../../auth/api/auth'
-import { QrCode } from '../components/QrCode'
-import { joinUrl } from '../joinUrl'
+import { SessionInvitation } from '../components/SessionInvitation'
 import { localLiveApi, type LocalLiveStatus } from '../api/localLive'
 import {
   liveApi,
@@ -96,18 +95,13 @@ export function HostLivePage() {
   }
 
   if (!session) return <p>{error || 'Loading session…'}</p>
-  const url = local
-    ? `http://${local.selectedHost}:${local.port}/join/${session.joinCode}`
-    : joinUrl(session.joinCode)
-
   return (
     <>
       <div className="workspaceHeading">
         <div>
-          <p className="eyebrow">{local ? 'LOCAL LIVE MODE' : 'LIVE SESSION'}</p>
+          <p className="eyebrow">LIVE SESSION</p>
           <h1>{session.assessmentTitle}</h1>
           <p>
-            {local ? 'Network: Local · Internet: Not required · ' : ''}
             Status: {session.status} · {connection}
           </p>
         </div>
@@ -119,19 +113,11 @@ export function HostLivePage() {
       )}
       <div className="liveGrid">
         <section className="panel liveStage">
-          <div className="liveStageTop">
-            <div>
-              <p className="liveEyebrow">INVITE YOUR PARTICIPANTS</p>
-              <h2 className="joinCode">Code {session.joinCode}</h2>
-              <p className="liveStageHint">One room. Everyone connected.</p>
-              <a className="joinLink" href={url} target="_blank" rel="noreferrer">
-                Open participant link ↗
-              </a>
-            </div>
-            <div className="hostQr">
-              <QrCode value={url} />
-            </div>
-          </div>
+          {session.status === 'WAITING' || session.status === 'ACTIVE' ? (
+            <SessionInvitation code={session.joinCode} local={local} />
+          ) : (
+            <h2>Sessão encerrada</h2>
+          )}
           <div className="liveStageFooter">
             <p>{people.length} participants</p>
             <div className="inlineActions">

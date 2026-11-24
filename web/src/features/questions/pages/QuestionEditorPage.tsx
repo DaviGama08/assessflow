@@ -58,7 +58,7 @@ export function QuestionEditorPage({
         <div>
           <p className="eyebrow">QUESTION BANK</p>
           <h1>{questionId ? 'Edit question' : 'New question'}</h1>
-          <p>The API validates option rules for each question type.</p>
+          <p>Write the question, add options and choose the correct answer.</p>
         </div>
       </div>
       {error && (
@@ -69,9 +69,11 @@ export function QuestionEditorPage({
       <section className="panel">
         {loading ? (
           <p>Loading editor…</p>
-        ) : (
+        ) : error ? null : (
           <QuestionEditor
             key={questionId ?? 'new'}
+            organizationId={organizationId}
+            onCategoryCreated={(category) => setCategories((current) => [...current, category])}
             initial={initial}
             categories={categories}
             busy={busy}

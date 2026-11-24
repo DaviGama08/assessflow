@@ -339,13 +339,11 @@
 .categoryPanel {
   margin-top: 1.5rem;
 }
-.categoryPanel summary {
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-.categoryPanel[open] summary {
-  margin-bottom: 1.5rem;
+.assessmentFields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
 }
 .categoryTags {
   display: flex;

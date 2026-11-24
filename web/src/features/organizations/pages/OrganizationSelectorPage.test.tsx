@@ -23,7 +23,7 @@ describe('OrganizationSelectorPage', () => {
     } as Response)
     render(
       <MemoryRouter>
-        <OrganizationSelectorPage />
+        <OrganizationSelectorPage isTeacher />
       </MemoryRouter>,
     )
     expect(await screen.findByRole('link', { name: /Solidus Training/ })).toHaveAttribute(

@@ -107,6 +107,8 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: ./mvnw -B -DskipTests package
         working-directory: api
+      - name: Set teacher invitation for the E2E run
+        run: echo "APP_TEACHER_INVITE_CODE=$(openssl rand -hex 24)" >> "$GITHUB_ENV"
       - name: Start API
         run: |
           java -jar api/target/assessflow-api-0.1.0.jar \

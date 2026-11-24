@@ -21,9 +21,8 @@ class LanAddressesTest {
     }
 
     @Test
-    void buildsJoinAndWifiPayloads() {
+    void buildsSessionJoinUrl() {
         assertThat(JoinUrls.join("192.168.1.50/", 8080, "x7k92p"))
                 .isEqualTo("http://192.168.1.50:8080/join/X7K92P");
-        assertThat(JoinUrls.wifi("AssessFlow-X7K9", "ab;c")).isEqualTo("WIFI:T:WPA;S:AssessFlow-X7K9;P:ab\\;c;;");
     }
 }

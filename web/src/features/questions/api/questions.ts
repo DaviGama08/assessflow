@@ -16,6 +16,8 @@ export type QuestionFilters = {
 }
 
 export const questionsApi = {
+  installStarter: (organizationId: string) =>
+    request<number>(`${questionsRoot(organizationId)}/starter`, { method: 'POST' }),
   list: (organizationId: string, filters: QuestionFilters = {}) => {
     const params = new URLSearchParams()
     params.set('page', String(filters.page ?? 0))

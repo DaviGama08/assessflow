@@ -95,6 +95,7 @@ public class AssessmentQuestionService {
         assessments.requireOrganization(organizationId);
         access.requireInstructor(organizationId, actor.getId());
         Assessment assessment = assessments.requireOwned(organizationId, assessmentId);
+        assessment.requireNotArchived();
         AssessmentQuestion link = findLink(assessment.getId(), questionId);
         Question question = questions.requireOwned(organizationId, questionId);
         link.setPoints(points);
@@ -106,6 +107,7 @@ public class AssessmentQuestionService {
         assessments.requireOrganization(organizationId);
         access.requireInstructor(organizationId, actor.getId());
         Assessment assessment = assessments.requireOwned(organizationId, assessmentId);
+        assessment.requireNotArchived();
         links.delete(findLink(assessment.getId(), questionId));
     }
 
@@ -115,6 +117,7 @@ public class AssessmentQuestionService {
         assessments.requireOrganization(organizationId);
         access.requireInstructor(organizationId, actor.getId());
         Assessment assessment = assessments.requireOwned(organizationId, assessmentId);
+        assessment.requireNotArchived();
         List<AssessmentQuestion> items = links.findByAssessmentIdOrderByDisplayOrderAscIdAsc(assessment.getId());
         Set<UUID> current = items.stream().map(AssessmentQuestion::getQuestionId).collect(Collectors.toSet());
         if (questionIds.size() != items.size() || !current.equals(new HashSet<>(questionIds))) {

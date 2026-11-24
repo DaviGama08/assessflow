@@ -8,13 +8,4 @@ public final class JoinUrls {
         String normalized = code == null ? "" : code.trim().toUpperCase();
         return "http://" + hostname + ":" + port + "/join/" + normalized;
     }
-
-    public static String wifi(String ssid, String password) {
-        return "WIFI:T:WPA;S:" + escape(ssid) + ";P:" + escape(password) + ";;";
-    }
-
-    private static String escape(String value) {
-        if (value == null) return "";
-        return value.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace(":", "\\:");
-    }
 }

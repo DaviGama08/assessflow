@@ -33,8 +33,6 @@ public class SecurityConfig {
                                 "/api/v1/live-sessions/join", "/api/v1/live-sessions/preview",
                                 "/api/v1/local-live/status", "/api/v1/local-live/join-url/**",
                                 "/ws/**",
-                                "/generate_204", "/gen_204", "/hotspot-detect.html", "/connecttest.txt",
-                                "/ncsi.txt", "/success.txt", "/library/test/success.html", "/canonical.html",
                                 "/actuator/health", "/actuator/health/**", "/error",
                                 "/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/**", "/join", "/join/**",

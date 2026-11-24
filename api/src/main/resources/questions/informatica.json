@@ -1,0 +1,428 @@
+[
+  {
+    "category": "Programação",
+    "text": "Uma variável começa em 3 e é duplicada duas vezes. Qual é o valor final?",
+    "type": "SINGLE_CHOICE",
+    "difficulty": "EASY",
+    "explanation": "A primeira duplicação produz 6 e a segunda produz 12.",
+    "options": [
+      {
+        "text": "6",
+        "correct": false
+      },
+      {
+        "text": "9",
+        "correct": false
+      },
+      {
+        "text": "12",
+        "correct": true
+      },
+      {
+        "text": "18",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "category": "Programação",
+    "text": "Que estrutura retira primeiro o último elemento inserido?",
+    "type": "SINGLE_CHOICE",
+    "difficulty": "EASY",
+    "explanation": "Numa pilha, a remoção segue a ordem inversa da inserção.",
+    "options": [
+      {
+        "text": "Fila",
+        "correct": false
+      },
+      {
+        "text": "Pilha",
+        "correct": true
+      },
+      {
+        "text": "Árvore binária",
+        "correct": false
+      },
+      {
+        "text": "Tabela de dispersão",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "category": "Programação",
+    "text": "Na pesquisa binária clássica, os dados têm de estar ordenados.",
+    "type": "TRUE_FALSE",
+    "difficulty": "EASY",
+    "explanation": "A ordenação permite excluir metade dos candidatos em cada comparação.",
+    "options": [
+      {
+        "text": "Verdadeiro",
+        "correct": true
+      },
+      {
+        "text": "Falso",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "category": "Programação",
+    "text": "Uma lista tem cinco posições numeradas a partir de zero. Quais são índices válidos?",
+    "type": "MULTIPLE_CHOICE",
+    "difficulty": "EASY",
+    "explanation": "As posições vão de 0 a 4 nesta numeração.",
+    "options": [
+      {
+        "text": "−1",
+        "correct": false
+      },
+      {
+        "text": "0",
+        "correct": true
+      },
+      {
+        "text": "4",
+        "correct": true
+      },
+      {
+        "text": "5",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "category": "Programação",
+    "text": "Que condição permite a uma função recursiva terminar sem fazer outra chamada a si própria?",
+    "type": "SINGLE_CHOICE",
+    "difficulty": "EASY",
+    "explanation": "O caso base devolve um resultado diretamente.",
+    "options": [
+      {
+        "text": "Um ciclo infinito",
+        "correct": false
+      },
+      {
+        "text": "Uma variável global",
+        "correct": false
+      },
+      {
+        "text": "Um caso base",
+        "correct": true
+      },
+      {
+        "text": "Um parâmetro opcional",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "category": "Programação",
+    "text": "Dois ciclos aninhados executam, cada um, n iterações completas. Quantas vezes se executa a instrução no interior de ambos?",
+    "type": "SINGLE_CHOICE",
+    "difficulty": "MEDIUM",
+    "explanation": "Para cada uma das n iterações exteriores há n execuções interiores.",
+    "options": [
+      {
+        "text": "2n",
+        "correct": false
+      },
+      {
+        "text": "n + 1",
+        "correct": false
+      },
+      {
+        "text": "n²",
+        "correct": true
+      },
+      {
+        "text": "log₂ n",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "category": "Bases de dados",
+    "text": "Qual cláusula SQL ordena o resultado de uma consulta?",
+    "type": "SINGLE_CHOICE",
+    "difficulty": "EASY",
+    "explanation": "ORDER BY define a ordem das linhas devolvidas.",
+    "options": [
+      {
+        "text": "WHERE",
+        "correct": false
+      },
+      {
+        "text": "ORDER BY",
+        "correct": true
+      },
+      {
+        "text": "GROUP BY",
+        "correct": false
+      },
+      {
+        "text": "HAVING",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "category": "Bases de dados",
+    "text": "Que propriedades se aplicam a uma chave primária?",
+    "type": "MULTIPLE_CHOICE",
+    "difficulty": "MEDIUM",
+    "explanation": "A unicidade pode depender de uma coluna ou da combinação de várias.",
+    "options": [
+      {
+        "text": "Identifica cada linha de forma única",
+        "correct": true
+      },
+      {
+        "text": "Pode repetir o mesmo valor em duas linhas",
+        "correct": false
+      },
+      {
+        "text": "Pode ser composta por várias colunas",
+        "correct": true
+      },
+      {
+        "text": "Tem de ser um número inteiro",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "category": "Bases de dados",
+    "text": "Um INNER JOIN devolve linhas sem correspondência de ambas as tabelas.",
+    "type": "TRUE_FALSE",
+    "difficulty": "EASY",
+    "explanation": "Um INNER JOIN devolve apenas pares que satisfazem a condição da junção.",
+    "options": [
+      {
+        "text": "Verdadeiro",
+        "correct": false
+      },
+      {
+        "text": "Falso",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "category": "Bases de dados",
+    "text": "Uma transferência bancária exige que o débito e o crédito sejam ambos aplicados ou ambos anulados. Que propriedade garante isso?",
+    "type": "SINGLE_CHOICE",
+    "difficulty": "MEDIUM",
+    "explanation": "Uma transação atómica aplica todas as suas operações ou nenhuma.",
+    "options": [
+      {
+        "text": "Ordenação",
+        "correct": false
+      },
+      {
+        "text": "Atomicidade",
+        "correct": true
+      },
+      {
+        "text": "Indexação",
+        "correct": false
+      },
+      {
+        "text": "Compressão",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "category": "Bases de dados",
+    "text": "Numa tabela com três linhas, a coluna nota contém 12, NULL e 16. Quanto devolve COUNT(nota)?",
+    "type": "SINGLE_CHOICE",
+    "difficulty": "MEDIUM",
+    "explanation": "COUNT(coluna) conta apenas os valores diferentes de NULL.",
+    "options": [
+      {
+        "text": "1",
+        "correct": false
+      },
+      {
+        "text": "2",
+        "correct": true
+      },
+      {
+        "text": "3",
+        "correct": false
+      },
+      {
+        "text": "28",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "category": "Bases de dados",
+    "text": "Qual restrição associa uma encomenda a um cliente existente?",
+    "type": "SINGLE_CHOICE",
+    "difficulty": "EASY",
+    "explanation": "A chave estrangeira referencia uma chave da tabela de clientes.",
+    "options": [
+      {
+        "text": "DEFAULT",
+        "correct": false
+      },
+      {
+        "text": "UNIQUE na data",
+        "correct": false
+      },
+      {
+        "text": "Chave estrangeira",
+        "correct": true
+      },
+      {
+        "text": "ORDER BY",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "category": "Redes",
+    "text": "Que serviço traduz um nome de domínio num endereço IP?",
+    "type": "SINGLE_CHOICE",
+    "difficulty": "EASY",
+    "explanation": "O DNS fornece registos como A e AAAA que associam nomes a endereços.",
+    "options": [
+      {
+        "text": "DHCP",
+        "correct": false
+      },
+      {
+        "text": "DNS",
+        "correct": true
+      },
+      {
+        "text": "NTP",
+        "correct": false
+      },
+      {
+        "text": "SMTP",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "category": "Redes",
+    "text": "Qual é a função principal de um router IP?",
+    "type": "SINGLE_CHOICE",
+    "difficulty": "EASY",
+    "explanation": "O router consulta a tabela de encaminhamento para escolher o próximo salto.",
+    "options": [
+      {
+        "text": "Atribuir nomes a ficheiros",
+        "correct": false
+      },
+      {
+        "text": "Encaminhar pacotes entre redes",
+        "correct": true
+      },
+      {
+        "text": "Guardar páginas web",
+        "correct": false
+      },
+      {
+        "text": "Compilar programas",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "category": "Redes",
+    "text": "O UDP garante a entrega de todos os datagramas pela ordem de envio.",
+    "type": "TRUE_FALSE",
+    "difficulty": "EASY",
+    "explanation": "O protocolo UDP não inclui garantias de entrega nem de ordenação.",
+    "options": [
+      {
+        "text": "Verdadeiro",
+        "correct": false
+      },
+      {
+        "text": "Falso",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "category": "Redes",
+    "text": "Que protocolos da lista pertencem à camada de transporte?",
+    "type": "MULTIPLE_CHOICE",
+    "difficulty": "EASY",
+    "explanation": "TCP e UDP transportam dados entre aplicações identificadas por portas.",
+    "options": [
+      {
+        "text": "TCP",
+        "correct": true
+      },
+      {
+        "text": "DNS",
+        "correct": false
+      },
+      {
+        "text": "UDP",
+        "correct": true
+      },
+      {
+        "text": "HTTP",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "category": "Redes",
+    "text": "Quantos bits tem um endereço IPv6?",
+    "type": "SINGLE_CHOICE",
+    "difficulty": "EASY",
+    "explanation": "A representação binária de um endereço IPv6 ocupa 128 bits.",
+    "options": [
+      {
+        "text": "32",
+        "correct": false
+      },
+      {
+        "text": "64",
+        "correct": false
+      },
+      {
+        "text": "128",
+        "correct": true
+      },
+      {
+        "text": "256",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "category": "Redes",
+    "text": "Uma ligação transmite 80 megabits em 4 segundos. Qual foi o débito médio?",
+    "type": "SINGLE_CHOICE",
+    "difficulty": "EASY",
+    "explanation": "Divide-se o volume transmitido pelo tempo: 80 ÷ 4 = 20 Mbit/s.",
+    "options": [
+      {
+        "text": "5 Mbit/s",
+        "correct": false
+      },
+      {
+        "text": "20 Mbit/s",
+        "correct": true
+      },
+      {
+        "text": "76 Mbit/s",
+        "correct": false
+      },
+      {
+        "text": "320 Mbit/s",
+        "correct": false
+      }
+    ]
+  }
+]

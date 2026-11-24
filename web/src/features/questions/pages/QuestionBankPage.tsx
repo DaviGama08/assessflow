@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
+import { CategoryCreator } from '../components/CategoryCreator'
 import { useNavigate } from 'react-router-dom'
 import { questionsApi } from '../api/questions'
 import type { Question, QuestionCategory, QuestionPage } from '../types'
@@ -14,44 +15,51 @@ export function QuestionBankPage({ organizationId }: { organizationId: string })
   const [category, setCategory] = useState('')
   const [page, setPage] = useState(0)
   const [error, setError] = useState('')
-  const [name, setName] = useState('')
-  const [slug, setSlug] = useState('')
+  const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
 
-  async function reload(nextPage = page) {
-    const [questions, nextCategories] = await Promise.all([
-      questionsApi.list(organizationId, {
-        page: nextPage,
-        search,
-        type,
-        difficulty,
-        status,
-        category,
-      }),
+  const [revision, setRevision] = useState(0)
+  const reload = () => setRevision((value) => value + 1)
+  useEffect(() => {
+    let current = true
+    Promise.all([
+      questionsApi.list(organizationId, { page, search, type, difficulty, status, category }),
       questionsApi.categories(organizationId),
     ])
-    setData(questions)
-    setCategories(nextCategories)
-  }
+      .then(([questions, nextCategories]) => {
+        if (current) {
+          setData(questions)
+          setCategories(nextCategories)
+          setError('')
+        }
+      })
+      .catch((cause) => {
+        if (current) setError(cause instanceof Error ? cause.message : 'Could not load questions.')
+      })
+    return () => {
+      current = false
+    }
+  }, [organizationId, page, search, type, difficulty, status, category, revision])
 
-  useEffect(() => {
-    reload(page).catch((cause) =>
-      setError(cause instanceof Error ? cause.message : 'Could not load questions.'),
-    )
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload is recreated each render
-  }, [organizationId, page, search, type, difficulty, status, category])
-
-  async function createCategory(event: FormEvent) {
-    event.preventDefault()
-    setBusy(true)
+  async function importQuestions() {
     setError('')
+    setBusy(true)
     try {
-      await questionsApi.createCategory(organizationId, name, slug)
-      setName('')
-      setSlug('')
-      await reload()
+      const added = await questionsApi.installStarter(organizationId)
+      setNotice(
+        added
+          ? `${added} questions added to the bank.`
+          : 'This collection is already in your bank.',
+      )
+      setPage(0)
+      setSearch('')
+      setType('')
+      setDifficulty('')
+      setStatus('')
+      setCategory('')
+      reload()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not create category.')
+      setError(cause instanceof Error ? cause.message : 'Could not add the collection.')
     } finally {
       setBusy(false)
     }
@@ -62,7 +70,7 @@ export function QuestionBankPage({ organizationId }: { organizationId: string })
     setBusy(true)
     try {
       await questionsApi.archive(organizationId, question.id)
-      await reload()
+      reload()
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not archive question.')
     } finally {
@@ -87,6 +95,28 @@ export function QuestionBankPage({ organizationId }: { organizationId: string })
           {error}
         </p>
       )}
+      <section className="panel categoryPanel">
+        <h2>Categories</h2>
+        {categories.length > 0 && (
+          <div className="categoryTags">
+            {categories.map((item) => (
+              <span key={item.id}>{item.name}</span>
+            ))}
+          </div>
+        )}
+        <CategoryCreator
+          organizationId={organizationId}
+          onCreated={(item) => setCategories((current) => [...current, item])}
+        />
+      </section>
+      <section className="panel">
+        <h2>Starter questions</h2>
+        <p>18 questions in Portuguese covering programming, databases and networks.</p>
+        <button className="buttonSecondary" disabled={busy} onClick={() => void importQuestions()}>
+          Add starter questions
+        </button>
+        {notice && <p role="status">{notice}</p>}
+      </section>
       <section className="panel">
         <div className="listToolbar">
           <h2>All questions</h2>
@@ -218,39 +248,6 @@ export function QuestionBankPage({ organizationId }: { organizationId: string })
           </button>
         </div>
       </section>
-      <details className="panel categoryPanel">
-        <summary>Manage categories · {categories.length}</summary>
-        <div className="categoryTags">
-          {categories.map((item) => (
-            <span key={item.id}>
-              {item.name} <small>({item.slug})</small>
-            </span>
-          ))}
-        </div>
-        <form className="filters" onSubmit={createCategory}>
-          <label>
-            Name
-            <input
-              required
-              maxLength={200}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
-          </label>
-          <label>
-            Slug
-            <input
-              required
-              maxLength={100}
-              value={slug}
-              onChange={(event) => setSlug(event.target.value)}
-            />
-          </label>
-          <button disabled={busy} type="submit">
-            Add category
-          </button>
-        </form>
-      </details>
     </>
   )
 }
