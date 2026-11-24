@@ -1,0 +1,105 @@
+@startuml ER
+!include ../../../diagram-kit/templates/docs/diagrams/styles/default.puml
+title AssessFlow — Modelo relacional
+hide methods
+skinparam linetype ortho
+entity users {
+* id : uuid <<PK>>
+email : varchar <<UNIQUE>>
+}
+entity organizations {
+* id : uuid <<PK>>
+slug : varchar <<UNIQUE>>
+}
+entity organization_members {
+* id : uuid <<PK>>
+organization_id : uuid <<FK>>
+user_id : uuid <<FK>>
+role : enum
+}
+entity organization_branding {
+* organization_id : uuid <<PK, FK>>
+}
+entity assessments {
+* id : uuid <<PK>>
+organization_id : uuid <<FK>>
+title : varchar
+status : enum
+}
+entity question_categories {
+* id : uuid <<PK>>
+organization_id : uuid <<FK>>
+}
+entity questions {
+* id : uuid <<PK>>
+organization_id : uuid <<FK>>
+category_id : uuid <<FK>>
+}
+entity answer_options {
+* id : uuid <<PK>>
+question_id : uuid <<FK>>
+}
+entity assessment_questions {
+* id : uuid <<PK>>
+assessment_id : uuid <<FK>>
+question_id : uuid <<FK>>
+points : integer
+display_order : integer
+}
+entity live_sessions {
+* id : uuid <<PK>>
+organization_id : uuid <<FK>>
+assessment_id : uuid <<FK>>
+created_by_user_id : uuid <<FK>>
+}
+entity live_session_questions {
+* id : uuid <<PK>>
+live_session_id : uuid <<FK>>
+source_question_id : uuid <<FK>>
+}
+entity live_session_question_options {
+* id : uuid <<PK>>
+live_session_question_id : uuid <<FK>>
+}
+entity live_participants {
+* id : uuid <<PK>>
+live_session_id : uuid <<FK>>
+user_id : uuid nullable
+}
+entity live_answers {
+* id : uuid <<PK>>
+live_session_id : uuid <<FK>>
+live_session_question_id : uuid <<FK>>
+participant_id : uuid <<FK>>
+}
+entity live_answer_options {
+* answer_id : uuid <<PK, FK>>
+* option_id : uuid <<PK, FK>>
+}
+users ||--o{ organization_members : membership
+organizations ||--o{ organization_members : members
+organizations ||--o| organization_branding : branding opcional
+organizations ||--o{ assessments : owns
+organizations ||--o{ question_categories : scopes
+organizations ||--o{ questions : scopes
+question_categories ||--o{ questions : classifies
+questions ||--o{ answer_options : options
+assessments ||--o{ assessment_questions : items
+questions ||--o{ assessment_questions : reused
+organizations ||--o{ live_sessions : hosts
+assessments ||--o{ live_sessions : source
+users ||--o{ live_sessions : creates
+live_sessions ||--o{ live_session_questions : snapshots
+questions ||--o{ live_session_questions : source
+live_session_questions ||--o{ live_session_question_options : options
+live_sessions ||--o{ live_participants : participants
+users |o--o{ live_participants : optional account
+live_sessions ||--o{ live_answers : records
+live_session_questions ||--o{ live_answers : receives
+live_participants ||--o{ live_answers : submits
+live_answers ||--o{ live_answer_options : selections
+live_session_question_options ||--o{ live_answer_options : selected
+note bottom
+Cardinalidades derivadas de FKs e nullability. Assessment-question é N:M com pontos/ordem na associação. Branding tem zero ou uma linha por organização. Participante pode não ter utilizador associado. UNIQUE(session, question, participant) limita resposta única. live_answer_options liga respostas a opções N:M. Sessões guardam snapshots das questões.
+end note
+@enduml

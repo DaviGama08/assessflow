@@ -1,0 +1,92 @@
+@startuml websocket-connection
+!include ../../../diagram-kit/templates/docs/diagrams/styles/default.puml
+title AssessFlow — HTTP normal e abertura opcional do canal de eventos
+skinparam roundcorner 0
+
+|Navegador|
+start
+:Enviar pedido HTTP normal
+TCP/TLS pode ser reutilizado; <<#DCEBFA>>
+|API / servidor de transporte|
+:Identificar endpoint e validar acesso; <<#DCEBFA>>
+if (Pedido de criar ou entrar
+numa sessão ao vivo?) then (sim)
+ :Criar sessão ou registar participante; <<#DEF0E4>>
+ :Devolver sessionId
+e token do participante no join; <<#DEF0E4>>
+else (não)
+ :Executar operação pedida
+Login / organizações / questões / avaliações
+ou comando de sessão existente; <<#DCEBFA>>
+ :Devolver resposta HTTP; <<#DCEBFA>>
+endif
+|Navegador|
+if (Abrir página ao vivo
+com sessionId + token?) then (sim)
+ :Iniciar canal de eventos separado; <<#E8E1F5>>
+else (não)
+ :Continuar utilização normal
+Sem abrir WebSocket; <<#DCEBFA>>
+ stop
+endif
+:Entrar na página ao vivo
+com sessionId + token; <<#E8E1F5>>
+:Ativar STOMP.js\nuseLiveEvents; <<#E8E1F5>>
+:TCP do WebSocket · enviar SYN; <<#E8E1F5>>
+|API / servidor de transporte|
+:TCP · responder SYN + ACK; <<#E8E1F5>>
+|Navegador|
+:TCP · enviar ACK\nLigação TCP estabelecida; <<#E8E1F5>>
+if (URL wss://?) then (sim)
+ :Negociar TLS com o servidor\nEncriptar o transporte TCP; <<#E8E1F5>>
+else (ws://)
+ :Usar TCP sem TLS; <<#E8E1F5>>
+endif
+:HTTP/1.1 · GET /ws\nUpgrade: websocket; <<#E8E1F5>>
+|API / servidor de transporte|
+:Validar handshake e origem; <<#E8E1F5>>
+if (Handshake aceite?) then (sim)
+ :HTTP · 101 Switching Protocols; <<#E8E1F5>>
+else (não)
+ :Rejeitar abertura; <<#E8E1F5>>
+ stop
+endif
+|Navegador|
+:WebSocket aberto\nReutiliza a ligação TCP; <<#E8E1F5>>
+:STOMP · CONNECT\nAuthorization: Bearer <token>; <<#E8E1F5>>
+|API / servidor de transporte|
+:Validar token\nChannelInterceptor; <<#E8E1F5>>
+if (Autenticado?) then (sim)
+ :STOMP · CONNECTED; <<#E8E1F5>>
+else (não)
+ :Rejeitar CONNECT; <<#E8E1F5>>
+ stop
+endif
+|Navegador|
+:STOMP · SUBSCRIBE\nTópico do instrutor ou participante; <<#E8E1F5>>
+|API / servidor de transporte|
+:Verificar acesso ao tópico; <<#E8E1F5>>
+if (Autorizado?) then (sim)
+ :Registar subscrição no broker\nsimple OU relay; <<#E8E1F5>>
+else (não)
+ :Rejeitar SUBSCRIBE; <<#E8E1F5>>
+ stop
+endif
+|Navegador|
+:Canal pronto para receber\nSTOMP MESSAGE com JSON; <<#E8E1F5>>
+stop
+
+legend right
+|= Camadas do canal aberto |
+| JSON · conteúdo do evento |
+| STOMP · comando, headers e body |
+| WebSocket · frames bidirecionais |
+| TLS · apenas em wss:// |
+| TCP · transporte fiável |
+endlegend
+caption
+  A criação da sessão no banco e a abertura do WebSocket são operações distintas.
+  Handshake clássico HTTP/1.1. Se houver proxy/TLS externo, a ligação termina nesse servidor e é encaminhada à API.
+  O fluxo termina com o canal pronto: a ligação continua aberta. Os comandos da sessão seguem por HTTP, não STOMP SEND.
+end caption
+@enduml

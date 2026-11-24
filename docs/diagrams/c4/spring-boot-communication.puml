@@ -1,0 +1,85 @@
+@startuml spring-boot-communication
+!include <C4/C4_Component>
+!include ../../../diagram-kit/templates/docs/diagrams/styles/c4.puml
+
+title AssessFlow — versão 2 · Spring Boot por dentro
+LAYOUT_TOP_DOWN()
+skinparam nodesep 50
+skinparam ranksep 65
+
+AddElementTag("HTTP / MVC", $bgColor="#DCEBFA", $borderColor="#32658A", $fontColor="#20242A")
+AddElementTag("Negócio / dados", $bgColor="#DEF0E4", $borderColor="#38734D", $fontColor="#20242A")
+AddElementTag("WebSocket / STOMP", $bgColor="#E8E1F5", $borderColor="#71549A", $fontColor="#20242A")
+AddRelTag("HTTP", $lineColor="#32658A", $textColor="#254C69")
+AddRelTag("Dados", $lineColor="#38734D", $textColor="#285237")
+AddRelTag("STOMP", $lineColor="#71549A", $textColor="#594177")
+
+Container(browser, "Navegador", "React · fetch · STOMP.js", "Utilização normal / página ao vivo")
+Container_Boundary(api, "Processo da API · Spring Boot 4.1.1 · Java 25") {
+ Boundary(tomcat, "Servidor embutido · Tomcat 11.0.26") {
+  Component(connector, "Connector NIO", "TCP · sockets · poller", "Aceita ligações e deteta I/O", $tags="HTTP / MVC")
+  Component(workers, "Pool de threads Tomcat", "Executor de pedidos / I/O", "Trabalho enquanto processa;\nnão uma thread por socket ocioso", $tags="HTTP / MVC")
+ }
+ Boundary(filters, "Filtros HTTP · percurso selecionado") {
+  Component(rate, "PublicRateLimitFilter", "OncePerRequestFilter", "Login / register / join / preview", $tags="HTTP / MVC")
+  Component(security, "Spring Security", "FilterChainProxy · SecurityFilterChain", "CORS → BearerTokenFilter →\nParticipantTokenFilter → autorização", $tags="HTTP / MVC")
+ }
+ Boundary(mvc, "Spring MVC") {
+  Component(dispatch, "DispatcherServlet", "HandlerMapping + HandlerAdapter", "Escolhe REST ou handshake /ws", $tags="HTTP / MVC")
+  Component(controllers, "Controllers REST", "@RestController · Jackson · Validation", "Auth · organizações · questões\navaliações · sessões", $tags="HTTP / MVC")
+ }
+ Boundary(business, "Aplicação e persistência") {
+  Component(services, "Serviços de aplicação", "Auth / Organization / Question / Assessment", "Operações normais", $tags="Negócio / dados")
+  Component(live, "LiveSessionService", "Criar · join · start · answers · state", "Apenas pedidos de sessão", $tags="Negócio / dados")
+  Component(jpa, "Transações e repositories", "Proxy @Transactional · JPA / Hibernate", "EntityManager · SQL · commit / rollback", $tags="Negócio / dados")
+  Component(pool, "Pool HikariCP", "DataSource · ligações JDBC", "Máximo: 10 · mínimo idle: 2\nConfigurável por ambiente", $tags="Negócio / dados")
+ }
+ Boundary(rt, "Tempo real · usado nas páginas ao vivo") {
+  Component(handshake, "Handshake /ws", "WebSocketHttpRequestHandler", "Origem → Upgrade → HTTP 101", $tags="WebSocket / STOMP")
+  Component(ws, "Sessão WebSocket / codec", "SubProtocolWebSocketHandler", "Frames WebSocket ↔ STOMP", $tags="WebSocket / STOMP")
+  Component(interceptor, "ChannelInterceptor", "preSend · antes do executor", "CONNECT: token · SUBSCRIBE: acesso\nSEND do cliente: rejeitado", $tags="WebSocket / STOMP")
+  Component(inbound, "Pool de entrada STOMP", "clientInboundChannelExecutor", "Executa handlers do canal de entrada", $tags="WebSocket / STOMP")
+  Component(broker, "Broker STOMP", "SimpleBrokerMessageHandler OU relay", "Subscrições e distribuição", $tags="WebSocket / STOMP")
+  Component(outbound, "Pool de saída STOMP", "clientOutboundChannelExecutor", "Entrega mensagens às sessões", $tags="WebSocket / STOMP")
+  Component(publisher, "Listener após commit", "StompLiveSessionNotifier", "AFTER_COMMIT · sem @Async", $tags="Negócio / dados")
+  Component(template, "Publicação no brokerChannel", "SimpMessagingTemplate", "Canal síncrono nesta configuração", $tags="WebSocket / STOMP")
+ }
+}
+ContainerDb(db, "PostgreSQL", "Processo externo", "Dados persistentes")
+Container(rabbit, "RabbitMQ", "Só no modo relay", "Broker externo · STOMP :61613", $tags="WebSocket / STOMP")
+
+BiRel(browser, connector, "HTTP(S) normal / handshake /ws", "TCP · TLS quando aplicável", $tags="HTTP")
+Rel_R(connector, workers, "Despacha trabalho", "NIO", $tags="HTTP")
+Rel(workers, rate, "Pedido HTTP", "Servlet", $tags="HTTP")
+Rel_R(rate, security, "Continua se permitido", "FilterChain", $tags="HTTP")
+Rel(security, dispatch, "Acesso permitido", "Stateless · sem HttpSession", $tags="HTTP")
+Rel_R(dispatch, controllers, "/api/v1/*", "Java", $tags="HTTP")
+Rel(controllers, services, "Operação normal", "Java", $tags="HTTP")
+Rel(controllers, live, "Endpoint de sessão", "Java", $tags="Dados")
+Rel(services, jpa, "Transação / acesso a dados", "Java", $tags="Dados")
+Rel(live, jpa, "Transação / acesso a dados", "Java", $tags="Dados")
+BiRel(jpa, pool, "Obtém / devolve ligação", "JDBC", $tags="Dados")
+BiRel(pool, db, "SQL / resultados", "Protocolo PostgreSQL · TCP", $tags="Dados")
+
+Rel(dispatch, handshake, "Só GET /ws + Upgrade", "HandlerMapping", $tags="STOMP")
+Rel(handshake, ws, "Após HTTP 101", "Cria sessão WebSocket", $tags="STOMP")
+BiRel(connector, ws, "Frames após Upgrade", "I/O Tomcat · não repassa filtros HTTP", $tags="STOMP")
+Rel(ws, interceptor, "Descodifica frame STOMP", "Java", $tags="STOMP")
+Rel(interceptor, inbound, "Mensagem autorizada", "clientInboundChannel", $tags="STOMP")
+Rel(inbound, broker, "CONNECT / SUBSCRIBE", "Executor", $tags="STOMP")
+Rel(broker, outbound, "CONNECTED / MESSAGE", "clientOutboundChannel", $tags="STOMP")
+Rel(outbound, ws, "Codifica e envia", "STOMP → WebSocket", $tags="STOMP")
+Rel(live, publisher, "Evento entregue após commit", "Spring · listener síncrono", $tags="Dados")
+Rel(publisher, template, "convertAndSend", "Java", $tags="Dados")
+Rel(template, broker, "Entrega publicação", "brokerChannel", $tags="STOMP")
+BiRel(broker, rabbit, "Apenas relay", "Reactor Netty · STOMP / TCP", $tags="STOMP")
+
+caption
+ **Pools diferentes:** Tomcat e canais STOMP executam tarefas; HikariCP gere ligações ao banco. Tamanhos de threads não personalizados no projeto.
+ **HTTP:** resposta JSON regressa pelo percurso Servlet. Filtros selecionados; LocalPackageSizeFilter aplica-se apenas a importação Local Live.
+ **WebSocket:** apenas a abertura passa por HTTP; frames posteriores usam o canal persistente. Criar a sessão no banco continua a ser REST.
+ **Transações:** JPA open-in-view=false. O listener AFTER_COMMIT e brokerChannel não ganham um pool próprio sem configuração adicional.
+ **Transporte:** HTTP pode reutilizar TCP. TLS pode terminar num proxy externo; o diagrama não fixa uma topologia de deployment.
+end caption
+SHOW_LEGEND()
+@enduml

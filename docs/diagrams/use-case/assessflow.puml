@@ -1,0 +1,32 @@
+@startuml assessflow
+!include ../../../diagram-kit/templates/docs/diagrams/styles/default.puml
+left to right direction
+title AssessFlow — Casos de uso
+actor Gestor as Manager
+actor Instrutor as Instructor
+actor Participante as Participant
+rectangle "AssessFlow" {
+ usecase "Gerir organização e membros" as U1
+ usecase "Gerir banco de questões" as U2
+ usecase "Criar e editar avaliação" as U3
+ usecase "Publicar avaliação" as U4
+ usecase "Conduzir sessão ao vivo" as U5
+ usecase "Entrar numa sessão por código" as U6
+ usecase "Responder à questão ativa" as U7
+ usecase "Acompanhar resultados" as U8
+}
+Manager -- U1
+Manager -- U2
+Manager -- U3
+Manager -- U4
+Manager -- U5
+U2 -- Instructor
+U3 -- Instructor
+U4 -- Instructor
+U5 -- Instructor
+Manager -- U8
+U8 -- Instructor
+Participant -- U6
+Participant -- U7
+Participant -- U8
+@enduml

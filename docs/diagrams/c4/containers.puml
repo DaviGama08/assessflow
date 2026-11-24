@@ -1,0 +1,17 @@
+@startuml containers
+!include <C4/C4_Container>
+!include ../../../diagram-kit/templates/docs/diagrams/styles/c4.puml
+title AssessFlow — Containers
+LAYOUT_LEFT_RIGHT()
+Person(manager, "Gestor / Instrutor", "Gere avaliações e sessões.")
+Person(participant, "Participante", "Entra e responde a sessões.")
+System_Boundary(system, "AssessFlow") {
+ Container(web, "Web App", "React, TypeScript", "Interface de gestão e participação.")
+ Container(api, "API", "Spring Boot, Java", "Autenticação, regras de negócio, REST e eventos ao vivo.")
+ ContainerDb(db, "Base de dados", "PostgreSQL", "Dados de utilizadores, organizações, avaliações e sessões.")
+}
+Rel(manager, web, "Usa", "HTTPS")
+Rel(participant, web, "Usa", "HTTPS")
+Rel(web, api, "Consulta e comanda; recebe eventos", "HTTPS/JSON, STOMP/WebSocket")
+Rel(api, db, "Lê e grava dados", "JDBC")
+@enduml

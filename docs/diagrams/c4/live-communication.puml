@@ -1,0 +1,64 @@
+@startuml live-communication
+!include <C4/C4_Component>
+!include ../../../diagram-kit/templates/docs/diagrams/styles/c4.puml
+
+title AssessFlow — utilização normal e caminho opcional de sessão ao vivo
+LAYOUT_LEFT_RIGHT()
+skinparam nodesep 45
+skinparam ranksep 75
+
+AddElementTag("HTTP normal", $bgColor="#DCEBFA", $borderColor="#32658A", $fontColor="#20242A")
+AddElementTag("Sessão via HTTP", $bgColor="#DEF0E4", $borderColor="#38734D", $fontColor="#20242A")
+AddElementTag("Canal WebSocket", $bgColor="#E8E1F5", $borderColor="#71549A", $fontColor="#20242A")
+AddRelTag("HTTP", $lineColor="#32658A", $textColor="#254C69")
+AddRelTag("Sessão", $lineColor="#38734D", $textColor="#285237")
+AddRelTag("WebSocket", $lineColor="#71549A", $textColor="#594177")
+
+Container(web, "Navegador", "React", "Gestão normal ou página ao vivo")
+Container_Boundary(api, "API · Spring Boot") {
+ Component(http, "Entrada HTTP", "REST /api/v1 · filtros de acesso", "Encaminha pelo endpoint pedido", $tags="HTTP normal")
+ Boundary(normal, "Utilização normal · módulos HTTP") {
+  Component(identity, "Autenticação", "AuthService", "Login · refresh · logout", $tags="HTTP normal")
+  Component(org, "Organizações", "OrganizationService", "Membros · permissões", $tags="HTTP normal")
+  Component(questions, "Banco de questões", "QuestionService", "Criar · editar · consultar", $tags="HTTP normal")
+  Component(assessment, "Avaliações", "AssessmentService", "Compor · publicar · consultar", $tags="HTTP normal")
+ }
+ Boundary(live, "Sessões ao vivo · caminho opcional") {
+  Component(session, "Gestão da sessão", "LiveSessionService · HTTP", "Criar · entrar · iniciar · responder", $tags="Sessão via HTTP")
+  Component(publish, "Publicador de eventos", "Spring AFTER_COMMIT", "Notifica após gravar", $tags="Sessão via HTTP")
+  Boundary(realtime, "Tempo real · apenas nas páginas ao vivo") {
+   Component(ws, "Endpoint /ws", "WebSocket", "Upgrade HTTP → canal persistente", $tags="Canal WebSocket")
+   Component(access, "Acesso STOMP", "ChannelInterceptor", "Valida CONNECT e SUBSCRIBE", $tags="Canal WebSocket")
+   Component(broker, "Mensageria / broker", "Spring STOMP", "simple interno OU relay", $tags="Canal WebSocket")
+  }
+ }
+}
+ContainerDb(db, "Base de dados", "PostgreSQL", "Dados de todos os módulos")
+Container(rabbit, "RabbitMQ", "Apenas em modo relay", "Broker externo ao processo da API", $tags="Canal WebSocket")
+
+BiRel(web, http, "Pedidos e respostas", "HTTP(S) / JSON", $tags="HTTP")
+Rel(http, identity, "/auth/*", "Java", $tags="HTTP")
+Rel(http, org, "/organizations/*", "Java", $tags="HTTP")
+Rel(http, questions, ".../questions/*", "Java", $tags="HTTP")
+Rel(http, assessment, ".../assessments/*", "Java", $tags="HTTP")
+Rel(http, session, "Só endpoints de sessão", ".../live-sessions/*", $tags="Sessão")
+Rel(identity, db, "Utilizadores e tokens", "JDBC", $tags="HTTP")
+Rel(org, db, "Organizações e membros", "JDBC", $tags="HTTP")
+Rel(questions, db, "Questões e opções", "JDBC", $tags="HTTP")
+Rel(assessment, db, "Avaliações e associações", "JDBC", $tags="HTTP")
+Rel(session, db, "Sessão, participantes e respostas", "JDBC", $tags="Sessão")
+Rel(session, publish, "Commit → evento", "Spring", $tags="Sessão")
+Rel(publish, broker, "Publica notificação", "SimpMessagingTemplate", $tags="Sessão")
+BiRel(web, ws, "Só ao abrir a página ao vivo\ncom sessionId + token", "TCP (+ TLS) → HTTP Upgrade → WebSocket", $tags="WebSocket")
+Rel(ws, access, "Autentica / autoriza", "STOMP CONNECT / SUBSCRIBE", $tags="WebSocket")
+BiRel(ws, broker, "Subscrições / notificações", "Canais internos Spring", $tags="WebSocket")
+BiRel(broker, rabbit, "Só se configurado relay", "STOMP / TCP :61613", $tags="WebSocket")
+
+caption
+ **Criar uma sessão:** POST .../assessments/{id}/live-sessions → registo no banco + sessionId. Ainda é um pedido HTTP normal.
+ **Abrir o canal:** ao navegar para a página ao vivo, o browser inicia /ws; criar a sessão no backend não abre o WebSocket por si só.
+ **HTTP normal não cria sessões ao vivo.** Durante uma sessão, start/answers/state também continuam por HTTP; STOMP entrega notificações.
+ **TCP:** HTTP pode reutilizar ligações; não há necessariamente um novo handshake TCP por pedido. WebSocket mantém a sua ligação aberta.
+end caption
+SHOW_LEGEND()
+@enduml

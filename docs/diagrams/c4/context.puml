@@ -1,0 +1,11 @@
+@startuml context
+!include <C4/C4_Context>
+!include ../../../diagram-kit/templates/docs/diagrams/styles/c4.puml
+title AssessFlow — Contexto do sistema
+LAYOUT_LEFT_RIGHT()
+Person(manager, "Gestor / Instrutor", "Configura avaliações e conduz sessões ao vivo.")
+Person(participant, "Participante", "Responde a avaliações e sessões ao vivo.")
+System(assessflow, "AssessFlow", "Cria, organiza e aplica avaliações, incluindo sessões interativas ao vivo.")
+Rel(manager, assessflow, "Gere organização, banco de questões, avaliações e sessões")
+Rel(participant, assessflow, "Entra em sessões e submete respostas")
+@enduml
